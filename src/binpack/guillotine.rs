@@ -47,7 +47,7 @@
 //! if let Some(rect) = &bin.find_by_id(9528) {
 //!     println!(
 //!         "Item with id {} was placed into the bin at position (x: {}, y: {})",
-//!         rect.dim().id(),
+//!         rect.id(),
 //!         rect.x(),
 //!         rect.y()
 //!     );

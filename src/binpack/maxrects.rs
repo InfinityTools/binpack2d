@@ -35,7 +35,7 @@
 //! // Let's see if our item with id=9528 was successfully inserted...
 //! if let Some(rect) = &bin.find_by_id(9528) {
 //!     println!("Item with id {} was placed into the bin at position (x: {}, y: {})",
-//!              rect.dim().id(), rect.x(), rect.y());
+//!              rect.id(), rect.x(), rect.y());
 //! } else {
 //!     println!("Item with id 9528 could not be placed into the bin.");
 //! }

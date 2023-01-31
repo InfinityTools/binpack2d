@@ -1,17 +1,19 @@
 # binpack2d
 
-`binpack2d` is a library for packing sets of arbitrary 2d rectangles into a larger bin. The algorithms are all
-approximations and use various heuristics, since the problem itself is intractable. 
+`binpack2d` is a Rust library for packing sets of arbitrary 2d rectangles into a larger bin.
+The algorithms are all approximations and use various heuristics, since the problem itself is intractable.
 
 The implementation is based on Jukka Jylänki's original C++ implementation of the RectangleBinPack.
 
-# Quickstart
+# Quick Start
 
 ```
 # In your Cargo.toml
 [dependencies]
 binpack2d = "0.1"
 ```
+
+This is a basic example that packs a number of rectangles into a bin and performs some queries afterwards.
 
 ```rust
 use binpack2d::{bin_new, BinType, Dimension};
@@ -40,7 +42,7 @@ fn main() {
     // Let's see if our item with id=9528 was successfully inserted...
     if let Some(rect) = &bin.find_by_id(9528) {
         println!("Item with id {} was placed into the bin at position (x: {}, y: {})",
-                 rect.dim().id(), rect.x(), rect.y());
+                 rect.id(), rect.x(), rect.y());
     } else {
         println!("Item with id 9528 could not be placed into the bin.");
     }

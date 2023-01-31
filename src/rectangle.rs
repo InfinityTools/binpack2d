@@ -58,12 +58,17 @@ impl Rectangle {
         }
     }
 
-    /// Convenience method: Returns the width of the bounding `Rectangle`.
+    /// Returns the identifier associated with the `Rectangle`.
+    pub fn id(&self) -> isize {
+        self.dim.id()
+    }
+
+    /// Returns the width of the bounding `Rectangle`.
     pub fn width(&self) -> u32 {
         self.dim.width()
     }
 
-    /// Convenience method: Returns the height of the bounding `Rectangle`.
+    /// Returns the height of the bounding `Rectangle`.
     pub fn height(&self) -> u32 {
         self.dim.height()
     }
