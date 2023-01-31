@@ -1,0 +1,16 @@
+[package]
+name = "binpack2d"
+version = "0.1.0"
+authors = ["Argent77"]
+edition = "2021"
+description = "A two-dimensional rectangle bin-packing algorithm."
+readme = "README.md"
+license = "MIT"
+keywords = ["2d", "atlas", "bin", "packer", "texture"]
+categories = ["algorithms"]
+repository = "https://github.com/InfinityTools/binpack2d"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dev-dependencies]
+rand = "0.8.5"
