@@ -11,5 +11,6 @@ Cargo.lock
 
 # User-defined entries
 /.*
+!/.github
 **/*.iml
 TODO

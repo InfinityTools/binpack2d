@@ -1,0 +1,35 @@
+name: Cargo Build & Test
+
+on:
+  push:
+  pull_request:
+
+env: 
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build_and_test:
+    name: binpack2d - latest
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        toolchain:
+          - stable
+          - beta
+          - nightly
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Rust installations
+      run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+
+    - name: Rust Version Info
+      run: rustc --version && cargo --version
+
+    - name: Build project
+      run: cargo build --verbose
+
+    - name: Run tests
+      run: cargo test --verbose
