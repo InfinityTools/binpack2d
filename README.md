@@ -28,9 +28,9 @@ fn main() {
         Dimension::new(420, 512),
         Dimension::new(620, 384),
         // Three more items with explicit identifiers: -1, 300, and 9528 respectively
-        Dimension::with_id(-1, 160, 214),
-        Dimension::with_id(300, 384, 640),
-        Dimension::with_id(9528, 400, 200),
+        Dimension::with_id(-1, 160, 214, 0),
+        Dimension::with_id(300, 384, 640, 0),
+        Dimension::with_id(9528, 400, 200, 0),
     ];
 
     // Create a bin with the dimensions 1024x1024, using the "MaxRects" bin type.

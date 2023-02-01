@@ -18,13 +18,13 @@ fn bin_shrink() {
 #[test]
 fn bin_insert() {
     let nodes = vec![
-        Dimension::new(2, 4),
-        Dimension::new(8, 6),
-        Dimension::new(12, 5),
-        Dimension::new(6, 6),
-        Dimension::new(8, 8),
-        Dimension::new(3, 8),
-        Dimension::new(10, 5),
+        Dimension::with_padding(2, 4, 0),
+        Dimension::with_padding(6, 4, 1),
+        Dimension::with_padding(10, 3, 1),
+        Dimension::with_padding(6, 6, 0),
+        Dimension::with_padding(4, 4, 2),
+        Dimension::with_padding(3, 8, 0),
+        Dimension::with_padding(8, 3, 1),
     ];
 
     let rule = Heuristic::ContactPointRule;
@@ -43,14 +43,14 @@ fn bin_insert() {
 
 #[test]
 fn bin_insert_list() {
-    let mut nodes = vec![
-        Dimension::new(2, 4),
-        Dimension::new(8, 6),
-        Dimension::new(12, 5),
-        Dimension::new(6, 6),
-        Dimension::new(8, 8),
-        Dimension::new(3, 8),
-        Dimension::new(10, 5),
+    let nodes = vec![
+        Dimension::with_padding(2, 4, 0),
+        Dimension::with_padding(6, 4, 1),
+        Dimension::with_padding(10, 3, 1),
+        Dimension::with_padding(6, 6, 0),
+        Dimension::with_padding(4, 4, 2),
+        Dimension::with_padding(3, 8, 0),
+        Dimension::with_padding(8, 3, 1),
     ];
 
     let rule = Heuristic::ContactPointRule;
@@ -59,7 +59,7 @@ fn bin_insert_list() {
     println!("MaxRectsBin::Insert_list: Creating bin({}, {}) using rule {:?}",
              bin.width(), bin.height(), rule);
 
-    bin.insert_list(&mut nodes, rule);
+    bin.insert_list(&nodes, rule);
     println!("{} node(s) in bin, {} node(s) rejected, occupancy: {}:\n{}",
              bin.len(), nodes.len(), bin.occupancy(), bin.visualize());
     println!("{bin}");

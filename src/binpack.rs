@@ -19,9 +19,9 @@
 //!     Dimension::new(420, 512),
 //!     Dimension::new(620, 384),
 //!     // Three more items with explicit identifiers: -1, 300, and 9528 respectively
-//!     Dimension::with_id(-1, 160, 214),
-//!     Dimension::with_id(300, 384, 640),
-//!     Dimension::with_id(9528, 400, 200),
+//!     Dimension::with_id(-1, 160, 214, 0),
+//!     Dimension::with_id(300, 384, 640, 0),
+//!     Dimension::with_id(9528, 400, 200, 0),
 //! ];
 //!
 //! // Create a bin with the dimensions 1024x1024, using the "MaxRects" bin type.
@@ -59,7 +59,7 @@ use self::guillotine::GuillotineBin;
 use self::maxrects::MaxRectsBin;
 use crate::dimension::Dimension;
 use crate::rectangle::Rectangle;
-use std::fmt::Display;
+use std::fmt::{Display};
 use std::slice::Iter;
 
 pub mod guillotine;
@@ -80,10 +80,10 @@ pub enum BinType {
 /// is implemented by all bin-packing algorithms provided by this package.
 pub trait BinPacker: Display {
     /// Returns the width of the bin.
-    fn width(&self) -> u32;
+    fn width(&self) -> i32;
 
     /// Returns the height of the bin.
-    fn height(&self) -> u32;
+    fn height(&self) -> i32;
 
     /// Removes all mapped rectangles from the bin.
     fn clear(&mut self) {
@@ -194,7 +194,7 @@ pub trait BinPacker: Display {
 }
 
 /// Creates an empty bin of the given size, using the specified [`BinType`] implementation.
-pub fn bin_new(bin_type: BinType, width: u32, height: u32) -> Box<dyn BinPacker> {
+pub fn bin_new(bin_type: BinType, width: i32, height: i32) -> Box<dyn BinPacker> {
     match bin_type {
         BinType::MaxRects => Box::new(MaxRectsBin::new(width, height)),
         BinType::Guillotine => Box::new(GuillotineBin::new(width, height)),
@@ -205,8 +205,8 @@ pub fn bin_new(bin_type: BinType, width: u32, height: u32) -> Box<dyn BinPacker>
 /// of mapped rectangle to improve performance, using the specified [`BinType`] implementation.
 pub fn bin_with_capacity(
     bin_type: BinType,
-    width: u32,
-    height: u32,
+    width: i32,
+    height: i32,
     capacity: usize,
 ) -> Box<dyn BinPacker> {
     match bin_type {
@@ -245,8 +245,8 @@ pub fn bin_with_capacity(
 pub fn pack_bins(
     bin_type: BinType,
     nodes: &[Dimension],
-    bin_width: u32,
-    bin_height: u32,
+    bin_width: i32,
+    bin_height: i32,
     optimized: bool,
 ) -> Vec<Box<dyn BinPacker>> {
     if optimized {
@@ -260,8 +260,8 @@ pub fn pack_bins(
 fn pack_bins_list(
     bin_type: BinType,
     nodes: &[Dimension],
-    bin_width: u32,
-    bin_height: u32,
+    bin_width: i32,
+    bin_height: i32,
 ) -> Vec<Box<dyn BinPacker>> {
     let mut bins = Vec::new();
     if nodes.is_empty() || bin_width == 0 || bin_height == 0 {
@@ -308,8 +308,8 @@ fn pack_bins_list(
 fn pack_bins_single(
     bin_type: BinType,
     nodes: &[Dimension],
-    bin_width: u32,
-    bin_height: u32
+    bin_width: i32,
+    bin_height: i32
 ) -> Vec<Box<dyn BinPacker>> {
     let mut bins = Vec::new();
     if nodes.is_empty() || bin_width == 0 || bin_height == 0 {
@@ -317,7 +317,7 @@ fn pack_bins_single(
     }
 
     for node in nodes {
-        if node.width() > bin_width || node.height() > bin_height {
+        if node.width_total() > bin_width || node.height_total() > bin_height {
             continue;
         }
 
@@ -343,7 +343,7 @@ fn pack_bins_single(
 }
 
 /// A helper method for visualizing bin content.
-fn visualize_bin(width: u32, height: u32, rects: &Vec<Rectangle>) -> Option<String> {
+fn visualize_bin(width: i32, height: i32, rects: &Vec<Rectangle>) -> Option<String> {
     if width > 0 && height > 0 && rects.len() <= 62 {
         // initializing grid
         let size = (width * height) as usize;

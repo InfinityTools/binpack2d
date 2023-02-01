@@ -22,9 +22,9 @@
 //!     Dimension::new(420, 512),
 //!     Dimension::new(620, 384),
 //!     // Three more items with explicit identifiers: -1, 300, and 9528 respectively
-//!     Dimension::with_id(-1, 160, 214),
-//!     Dimension::with_id(300, 384, 640),
-//!     Dimension::with_id(9528, 400, 200),
+//!     Dimension::with_id(-1, 160, 214, 0),
+//!     Dimension::with_id(300, 384, 640, 0),
+//!     Dimension::with_id(9528, 400, 200, 0),
 //! ];
 //!
 //! // Create a bin with the dimensions 1024x1024
@@ -122,9 +122,9 @@ pub enum SplitHeuristic {
 #[derive(Clone, Debug, PartialEq)]
 pub struct GuillotineBin {
     /// Horizontal dimension of the bin.
-    width: u32,
+    bin_width: i32,
     /// Vertical dimension of the bin.
-    height: u32,
+    bin_height: i32,
     /// Keeps track of used areas within the bin.
     rects_used: Vec<Rectangle>,
     /// Keeps track of free areas within the bin.
@@ -139,12 +139,12 @@ pub struct GuillotineBin {
 }
 
 impl BinPacker for GuillotineBin {
-    fn width(&self) -> u32 {
-        self.width
+    fn width(&self) -> i32 {
+        self.bin_width
     }
 
-    fn height(&self) -> u32 {
-        self.height
+    fn height(&self) -> i32 {
+        self.bin_height
     }
 
     fn clear_with(&mut self, capacity: usize) {
@@ -155,7 +155,7 @@ impl BinPacker for GuillotineBin {
         self.rects_free.push(Rectangle::new(
             0,
             0,
-            Dimension::with_id(0, self.width, self.height),
+            Dimension::with_id(0, self.bin_width, self.bin_height, 0),
         ));
     }
 
@@ -163,18 +163,18 @@ impl BinPacker for GuillotineBin {
         if dw > 0 || dh > 0 {
             // Free rectangles list must cover the new space
             for r in &mut self.rects_free {
-                if dw > 0 && r.x() + r.width() == self.width {
-                    let w = r.width();
-                    r.dim_mut().set_width(w + dw);
+                if dw > 0 && r.x_total() + r.width_total() == self.bin_width {
+                    let w = r.width_total();
+                    r.dim_mut().set_width(w + dw as i32);
                 }
-                if dh > 0 && r.y() + r.height() == self.height {
-                    let h = r.height();
-                    r.dim_mut().set_height(h + dh);
+                if dh > 0 && r.y_total() + r.height_total() == self.bin_height {
+                    let h = r.height_total();
+                    r.dim_mut().set_height(h + dh as i32);
                 }
             }
 
-            self.width += dw;
-            self.height += dh;
+            self.bin_width += dw as i32;
+            self.bin_height += dh as i32;
         }
     }
 
@@ -183,17 +183,17 @@ impl BinPacker for GuillotineBin {
             return;
         }
 
-        let mut min_x = u32::MAX;
-        let mut min_y = u32::MAX;
-        let mut max_x = u32::MIN;
-        let mut max_y = u32::MIN;
+        let mut min_x = i32::MAX;
+        let mut min_y = i32::MAX;
+        let mut max_x = i32::MIN;
+        let mut max_y = i32::MIN;
 
         // finding borders
         for rect in &self.rects_used {
-            min_x = min_x.min(rect.x());
-            min_y = min_y.min(rect.y());
-            max_x = max_x.max(rect.x() + rect.width());
-            max_y = max_y.max(rect.y() + rect.height());
+            min_x = min_x.min(rect.x_total());
+            min_y = min_y.min(rect.y_total());
+            max_x = max_x.max(rect.x_total() + rect.width_total());
+            max_y = max_y.max(rect.y_total() + rect.height_total());
         }
 
         let mut new_width = max_x - min_x;
@@ -201,13 +201,13 @@ impl BinPacker for GuillotineBin {
 
         if binary {
             // attempt to shrink to the next lower power of two
-            let mut cur_width = self.width;
+            let mut cur_width = self.bin_width;
             while new_width <= (cur_width >> 1) {
                 cur_width >>= 1;
             }
             new_width = cur_width;
 
-            let mut cur_height = self.height;
+            let mut cur_height = self.bin_height;
             while new_height <= (cur_height >> 1) {
                 cur_height >>= 1;
             }
@@ -215,20 +215,20 @@ impl BinPacker for GuillotineBin {
         }
 
         // adjusting rectangle positions
-        if new_width != self.width || new_height != self.height {
+        if new_width != self.bin_width || new_height != self.bin_height {
             if min_x > 0 || min_y > 0 {
                 for rect in &mut self.rects_used {
-                    rect.set_x(rect.x() - min_x);
-                    rect.set_y(rect.y() - min_y);
+                    rect.set_x_total(rect.x_total() - min_x);
+                    rect.set_y_total(rect.y_total() - min_y);
                 }
                 for rect in &mut self.rects_free {
-                    rect.set_x(rect.x() - min_x);
-                    rect.set_y(rect.y() - min_y);
+                    rect.set_x_total(rect.x_total() - min_x);
+                    rect.set_y_total(rect.y_total() - min_y);
                 }
             }
 
-            self.width = new_width;
-            self.height = new_height;
+            self.bin_width = new_width;
+            self.bin_height = new_height;
         }
     }
 
@@ -251,13 +251,13 @@ impl BinPacker for GuillotineBin {
     }
 
     fn occupancy(&self) -> f32 {
-        if self.width == 0 || self.height == 0 {
+        if self.bin_width == 0 || self.bin_height == 0 {
             return 0.0;
         }
 
-        let area: u64 = self.rects_used.iter().map(|r| r.dim().area()).sum();
+        let area: i64 = self.rects_used.iter().map(|r| r.dim().area()).sum();
 
-        area as f32 / (self.width * self.height) as f32
+        area as f32 / (self.bin_width * self.bin_height) as f32
     }
 
     fn as_slice(&self) -> &[Rectangle] {
@@ -284,26 +284,30 @@ impl BinPacker for GuillotineBin {
     }
 
     fn visualize(&self) -> String {
-        if let Some(output) = visualize_bin(self.width, self.height, &self.rects_used) {
+        if let Some(output) = visualize_bin(self.bin_width, self.bin_height, &self.rects_used) {
             output
         } else {
-            format!("{}", self)
+            format!("{self}")
         }
     }
 }
 
 impl GuillotineBin {
     /// Creates an empty bin of the given size.
-    pub fn new(width: u32, height: u32) -> Self {
+    ///
+    /// Minimum width and height of a bin is 1.
+    pub fn new(width: i32, height: i32) -> Self {
         Self::with_capacity(width, height, 4)
     }
 
     /// Creates an empty bin of the given size and reserves space for at least `capacity` number
     /// of mapped rectangle to improve performance.
-    pub fn with_capacity(width: u32, height: u32, capacity: usize) -> Self {
+    ///
+    /// Minimum width and height of a bin is 1.
+    pub fn with_capacity(width: i32, height: i32, capacity: usize) -> Self {
         let mut result = Self {
-            width: width.max(1),
-            height: height.max(1),
+            bin_width: width.max(1),
+            bin_height: height.max(1),
             rects_used: Vec::with_capacity(capacity.max(4)),
             rects_free: Vec::with_capacity((capacity * 4).max(4 * 4)),
             default_rect_choice: RectHeuristic::BestShortSideFit,
@@ -313,7 +317,7 @@ impl GuillotineBin {
         result.rects_free.push(Rectangle::new(
             0,
             0,
-            Dimension::with_id(0, result.width, result.height),
+            Dimension::with_id(0, result.bin_width, result.bin_height, 0),
         ));
 
         result
@@ -395,7 +399,7 @@ impl GuillotineBin {
         method: SplitHeuristic,
     ) -> Option<Rectangle> {
         // Empty or too big dimension objects are always rejected
-        if dim.is_empty() || dim.width() > self.width || dim.height() > self.height {
+        if dim.is_empty() || dim.width_total() > self.bin_width || dim.height_total() > self.bin_height {
             return None;
         }
 
@@ -473,15 +477,15 @@ impl GuillotineBin {
                 while j < nodes_size {
                     let node = &rejected[j];
 
-                    if node.width() == free_rect.width() && node.height() == free_rect.height() {
+                    if node.width_total() == free_rect.width_total() && node.height_total() == free_rect.height_total() {
                         // If this rectangle is a perfect match, we pick it instantly
                         best_free_rect = i;
                         best_node = j;
                         best_flipped = false;
                         best_score = i32::MIN;
                         break 'free_loop;
-                    } else if node.height() == free_rect.width()
-                        && node.width() == free_rect.height()
+                    } else if node.height_total() == free_rect.width_total()
+                        && node.width_total() == free_rect.height_total()
                     {
                         // If flipping this rectangle is a perfect match, pick that then
                         best_free_rect = i;
@@ -489,8 +493,8 @@ impl GuillotineBin {
                         best_flipped = true;
                         best_score = i32::MIN;
                         break 'free_loop;
-                    } else if node.width() <= free_rect.width()
-                        && node.height() <= free_rect.height()
+                    } else if node.width_total() <= free_rect.width_total()
+                        && node.height_total() <= free_rect.height_total()
                     {
                         // Try if we can fit the rectangle upright
                         let score = self.score_by_heuristic(node, free_rect, choice);
@@ -500,12 +504,12 @@ impl GuillotineBin {
                             best_flipped = false;
                             best_score = score;
                         }
-                    } else if node.height() <= free_rect.width()
-                        && node.width() <= free_rect.height()
+                    } else if node.height_total() <= free_rect.width_total()
+                        && node.width_total() <= free_rect.height_total()
                     {
                         // If not, then perhaps flipping sideways will make it fit?
                         let score = self.score_by_heuristic(
-                            &Dimension::with_id(0, node.width(), node.height()),
+                            &Dimension::with_id(0, node.width_total(), node.height_total(), 0),
                             free_rect,
                             choice,
                         );
@@ -530,8 +534,8 @@ impl GuillotineBin {
 
             // Otherwise, we're good to go and do the actual packing
             let mut new_node = Rectangle::new(
-                self.rects_free[best_free_rect].x(),
-                self.rects_free[best_free_rect].y(),
+                self.rects_free[best_free_rect].x() + rejected[best_node].padding(),
+                self.rects_free[best_free_rect].y() + rejected[best_node].padding(),
                 rejected[best_node].to_owned(),
             );
 
@@ -605,36 +609,36 @@ impl GuillotineBin {
 
         // Try each free rectangle to find the best one for placement
         for (i, rect) in self.rects_free.iter().enumerate() {
-            if dim.width() == rect.width() && dim.height() == rect.height() {
+            if dim.width_total() == rect.width_total() && dim.height_total() == rect.height_total() {
                 // If this is a perfect fit upright, choose it immediately
                 let node = best_node.get_or_insert_with(|| Rectangle::new(0, 0, *dim));
-                node.set_location(rect.x(), rect.y());
+                node.set_location_total(rect.x_total(), rect.y_total());
                 node.dim_mut().set_dimension(dim.width(), dim.height());
                 node_index = i;
                 break;
-            } else if dim.height() == rect.width() && dim.width() == rect.height() {
+            } else if dim.height_total() == rect.width_total() && dim.width_total() == rect.height_total() {
                 // If this is a perfect fit sideways, choose it
                 let node = best_node.get_or_insert_with(|| Rectangle::new(0, 0, *dim));
-                node.set_location(rect.x(), rect.y());
+                node.set_location_total(rect.x_total(), rect.y_total());
                 node.dim_mut().set_dimension(dim.height(), dim.width());
                 node_index = i;
                 break;
-            } else if dim.width() <= rect.width() && dim.height() <= rect.height() {
+            } else if dim.width_total() <= rect.width_total() && dim.height_total() <= rect.height_total() {
                 // Does the rectangle fit upright?
                 let score = self.score_by_heuristic(dim, rect, choice);
                 if score < best_score {
                     let node = best_node.get_or_insert_with(|| Rectangle::new(0, 0, *dim));
-                    node.set_location(rect.x(), rect.y());
+                    node.set_location_total(rect.x_total(), rect.y_total());
                     node.dim_mut().set_dimension(dim.width(), dim.height());
                     best_score = score;
                     node_index = i;
                 }
-            } else if dim.height() <= rect.width() && dim.width() <= rect.height() {
+            } else if dim.height_total() <= rect.width_total() && dim.width_total() <= rect.height_total() {
                 // Does the rectangle fit sideways?
                 let score = self.score_by_heuristic(dim, rect, choice);
                 if score < best_score {
                     let node = best_node.get_or_insert_with(|| Rectangle::new(0, 0, *dim));
-                    node.set_location(rect.x(), rect.y());
+                    node.set_location_total(rect.x_total(), rect.y_total());
                     node.dim_mut().set_dimension(dim.height(), dim.width());
                     best_score = score;
                     node_index = i;
@@ -666,22 +670,22 @@ impl GuillotineBin {
     /// Computes score value if a rect of the given size was placed into the given free rectangle.
     /// In these score values, smaller is better.
     fn score_baf(&self, dim: &Dimension, free_rect: &Rectangle) -> i32 {
-        (free_rect.dim().area() - dim.area()) as i32
+        (free_rect.dim().area_total() - dim.area_total()) as i32
     }
 
     /// Computes score value if a rect of the given size was placed into the given free rectangle.
     /// In these score values, smaller is better.
     fn score_bssf(&self, dim: &Dimension, free_rect: &Rectangle) -> i32 {
-        let leftover_h = free_rect.width().abs_diff(dim.width());
-        let leftover_v = free_rect.height().abs_diff(dim.height());
+        let leftover_h = free_rect.width_total().abs_diff(dim.width_total());
+        let leftover_v = free_rect.height_total().abs_diff(dim.height_total());
         leftover_v.min(leftover_h) as i32
     }
 
     /// Computes score value if a rect of the given size was placed into the given free rectangle.
     /// In these score values, smaller is better.
     fn score_blsf(&self, dim: &Dimension, free_rect: &Rectangle) -> i32 {
-        let leftover_h = free_rect.width().abs_diff(dim.width());
-        let leftover_v = free_rect.height().abs_diff(dim.height());
+        let leftover_h = free_rect.width_total().abs_diff(dim.width_total());
+        let leftover_v = free_rect.height_total().abs_diff(dim.height_total());
         leftover_v.max(leftover_h) as i32
     }
 
@@ -712,8 +716,8 @@ impl GuillotineBin {
         method: SplitHeuristic,
     ) {
         // Compute the lengths of the leftover area
-        let w = free_rect.width() - placed_rect.width();
-        let h = free_rect.height() - placed_rect.height();
+        let w = free_rect.width_total() - placed_rect.width_total();
+        let h = free_rect.height_total() - placed_rect.height_total();
 
         // Placing placed_rect into free_rect results in an L-shaped free area, which must be split
         // into two disjoint rectangles. This can be achieved with by splitting the L-shape using a
@@ -727,14 +731,14 @@ impl GuillotineBin {
             SplitHeuristic::LongerLeftoverAxis => w > h,
             // Maximize the larger area == minimize the smaller area.
             // Tries to make the single bigger rectangle.
-            SplitHeuristic::MinimizeArea => placed_rect.width() * h > w * placed_rect.height(),
+            SplitHeuristic::MinimizeArea => placed_rect.width_total() * h > w * placed_rect.height_total(),
             // Maximize the smaller area == minimize the larger area.
             // Tries to make the rectangles more even-sized.
-            SplitHeuristic::MaximizeArea => placed_rect.width() * h <= w * placed_rect.height(),
+            SplitHeuristic::MaximizeArea => placed_rect.width_total() * h <= w * placed_rect.height_total(),
             // Split along the shorter total axis
-            SplitHeuristic::ShorterAxis => free_rect.width() <= free_rect.height(),
+            SplitHeuristic::ShorterAxis => free_rect.width_total() <= free_rect.height_total(),
             // Split along the longer total axis
-            SplitHeuristic::LongerAxis => free_rect.width() > free_rect.height(),
+            SplitHeuristic::LongerAxis => free_rect.width_total() > free_rect.height_total(),
         };
 
         // Perform the actual split
@@ -752,15 +756,15 @@ impl GuillotineBin {
     ) {
         // Form the two new rectangles
         let mut bottom = Rectangle::new(
-            free_rect.x(),
-            free_rect.y() + placed_rect.height(),
-            Dimension::with_id(0, 0, free_rect.height() - placed_rect.height()),
+            free_rect.x_total(),
+            free_rect.y_total() + placed_rect.height_total(),
+            Dimension::with_id(0, 0, free_rect.height_total() - placed_rect.height_total(), 0),
         );
 
         let mut right = Rectangle::new(
-            free_rect.x() + placed_rect.width(),
-            free_rect.y(),
-            Dimension::with_id(0, free_rect.width() - placed_rect.width(), 0),
+            free_rect.x_total() + placed_rect.width_total(),
+            free_rect.y_total(),
+            Dimension::with_id(0, free_rect.width_total() - placed_rect.width_total(), 0, 0),
         );
 
         if split_horizontal {
@@ -774,10 +778,10 @@ impl GuillotineBin {
         }
 
         // Add the new rectangles into the free rectangle pool if they weren't degenerate
-        if !bottom.dim().is_empty() {
+        if !bottom.dim().is_empty_total() {
             self.rects_free.push(bottom);
         }
-        if !right.dim().is_empty() {
+        if !right.dim().is_empty_total() {
             self.rects_free.push(right);
         }
     }
@@ -798,38 +802,34 @@ impl GuillotineBin {
             let mut j = i + 1;
             while j < free_size {
                 let rect2 = &self.rects_free[j];
-                if rect1.width() == rect2.width() && rect1.x() == rect2.x() {
-                    if rect1.y() == rect2.y() + rect2.height() {
-                        rect1.set_y(rect1.y() - rect2.height());
+                if rect1.width_total() == rect2.width_total() && rect1.x_total() == rect2.x_total() {
+                    if rect1.y_total() == rect2.y_total() + rect2.height_total() {
+                        rect1.set_y_total(rect1.y_total() - rect2.height_total());
                         let rect1_height = rect1.height();
                         rect1.dim_mut().set_height(rect1_height + rect2.height());
-                        // self.rects_free[i] = rect1;
                         let _ = mem::replace(&mut self.rects_free[i], rect1.to_owned());
                         self.rects_free.swap_remove(j);
                         free_size -= 1;
-                    } else if rect1.y() + rect1.height() == rect2.y() {
+                    } else if rect1.y_total() + rect1.height_total() == rect2.y_total() {
                         let rect1_height = rect1.height();
                         rect1.dim_mut().set_height(rect1_height + rect2.height());
-                        // self.rects_free[i] = rect1;
                         let _ = mem::replace(&mut self.rects_free[i], rect1.to_owned());
                         self.rects_free.swap_remove(j);
                         free_size -= 1;
                     } else {
                         j += 1;
                     }
-                } else if rect1.height() == rect2.height() && rect1.y() == rect2.y() {
-                    if rect1.x() == rect2.x() + rect2.width() {
-                        rect1.set_x(rect1.x() - rect2.width());
+                } else if rect1.height_total() == rect2.height_total() && rect1.y_total() == rect2.y_total() {
+                    if rect1.x_total() == rect2.x_total() + rect2.width_total() {
+                        rect1.set_x_total(rect1.x_total() - rect2.width_total());
                         let rect1_width = rect1.width();
                         rect1.dim_mut().set_width(rect1_width + rect2.width());
-                        // self.rects_free[i] = rect1;
                         let _ = mem::replace(&mut self.rects_free[i], rect1.to_owned());
                         self.rects_free.swap_remove(j);
                         free_size -= 1;
-                    } else if rect1.x() + rect1.width() == rect2.x() {
+                    } else if rect1.x_total() + rect1.width_total() == rect2.x_total() {
                         let rect1_width = rect1.width();
                         rect1.dim_mut().set_width(rect1_width + rect2.width());
-                        // self.rects_free[i] = rect1;
                         let _ = mem::replace(&mut self.rects_free[i], rect1.to_owned());
                         self.rects_free.swap_remove(j);
                         free_size -= 1;
@@ -862,8 +862,8 @@ impl Display for GuillotineBin {
         write!(
             f,
             "Bin(width: {}, height: {}, rectangles: {})",
-            self.width,
-            self.height,
+            self.bin_width,
+            self.bin_height,
             self.rects_used.len()
         )
     }
@@ -906,8 +906,8 @@ impl Display for GuillotineBin {
 /// ```
 pub fn pack_bins(
     nodes: &[Dimension],
-    bin_width: u32,
-    bin_height: u32,
+    bin_width: i32,
+    bin_height: i32,
     merge: bool,
     choice: RectHeuristic,
     method: SplitHeuristic,
@@ -923,8 +923,8 @@ pub fn pack_bins(
 /// Inserts nodes via insert_list().
 fn pack_bins_list(
     nodes: &[Dimension],
-    bin_width: u32,
-    bin_height: u32,
+    bin_width: i32,
+    bin_height: i32,
     merge: bool,
     choice: RectHeuristic,
     method: SplitHeuristic,
@@ -973,8 +973,8 @@ fn pack_bins_list(
 /// Inserts nodes via insert().
 fn pack_bins_single(
     nodes: &[Dimension],
-    bin_width: u32,
-    bin_height: u32,
+    bin_width: i32,
+    bin_height: i32,
     merge: bool,
     choice: RectHeuristic,
     method: SplitHeuristic,
@@ -985,7 +985,7 @@ fn pack_bins_single(
     }
 
     for node in nodes {
-        if node.width() > bin_width || node.height() > bin_height {
+        if node.width_total() > bin_width || node.height_total() > bin_height {
             continue;
         }
 

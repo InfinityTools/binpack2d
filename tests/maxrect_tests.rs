@@ -13,7 +13,7 @@ fn bin_performance_maxrect() {
         Heuristic::ContactPointRule,
     ];
 
-    const DIM: u32 = 512;
+    const DIM: i32 = 512;
     const SIZE: usize = 1_000;
 
     let mut rng = StdRng::seed_from_u64(123456789);
@@ -23,6 +23,7 @@ fn bin_performance_maxrect() {
             i as isize,
             rng.gen_range((DIM / 128).max(1)..(DIM / 16).max(2)),
             rng.gen_range((DIM / 128).max(1)..(DIM / 16).max(2)),
+            0
         ));
     }
 

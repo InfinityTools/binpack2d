@@ -21,9 +21,9 @@
 //!     Dimension::new(420, 512),
 //!     Dimension::new(620, 384),
 //!     // Three more items with explicit identifiers: -1, 300, and 9528 respectively
-//!     Dimension::with_id(-1, 160, 214),
-//!     Dimension::with_id(300, 384, 640),
-//!     Dimension::with_id(9528, 400, 200),
+//!     Dimension::with_id(-1, 160, 214, 0),
+//!     Dimension::with_id(300, 384, 640, 0),
+//!     Dimension::with_id(9528, 400, 200, 0),
 //! ];
 //!
 //! // Create a bin with the dimensions 1024x1024
@@ -90,9 +90,9 @@ pub enum Heuristic {
 #[derive(Clone, Debug, PartialEq)]
 pub struct MaxRectsBin {
     /// Horizontal dimension of the bin.
-    width: u32,
+    bin_width: i32,
     /// Vertical dimension of the bin.
-    height: u32,
+    bin_height: i32,
     /// Keeps track of used areas within the bin.
     rects_used: Vec<Rectangle>,
     /// Keeps track of free areas within the bin.
@@ -108,12 +108,12 @@ pub struct MaxRectsBin {
 }
 
 impl BinPacker for MaxRectsBin {
-    fn width(&self) -> u32 {
-        self.width
+    fn width(&self) -> i32 {
+        self.bin_width
     }
 
-    fn height(&self) -> u32 {
-        self.height
+    fn height(&self) -> i32 {
+        self.bin_height
     }
 
     fn clear_with(&mut self, capacity: usize) {
@@ -124,7 +124,7 @@ impl BinPacker for MaxRectsBin {
         self.rects_free.push(Rectangle::new(
             0,
             0,
-            Dimension::with_id(0, self.width, self.height),
+            Dimension::with_id(0, self.bin_width, self.bin_height, 0),
         ));
     }
 
@@ -134,19 +134,19 @@ impl BinPacker for MaxRectsBin {
             let lists = vec![&mut self.rects_free, &mut self.new_rects_free];
             for list in lists {
                 for r in list {
-                    if dw > 0 && r.x() + r.width() == self.width {
-                        let w = r.width();
-                        r.dim_mut().set_width(w + dw);
+                    if dw > 0 && r.x_total() + r.width_total() == self.bin_width {
+                        let w = r.width_total();
+                        r.dim_mut().set_width(w + dw as i32);
                     }
-                    if dh > 0 && r.y() + r.height() == self.height {
-                        let h = r.height();
-                        r.dim_mut().set_height(h + dh);
+                    if dh > 0 && r.y_total() + r.height_total() == self.bin_height {
+                        let h = r.height_total();
+                        r.dim_mut().set_height(h + dh as i32);
                     }
                 }
             }
 
-            self.width += dw;
-            self.height += dh;
+            self.bin_width += dw as i32;
+            self.bin_height += dh as i32;
         }
     }
 
@@ -155,17 +155,17 @@ impl BinPacker for MaxRectsBin {
             return;
         }
 
-        let mut min_x = u32::MAX;
-        let mut min_y = u32::MAX;
-        let mut max_x = u32::MIN;
-        let mut max_y = u32::MIN;
+        let mut min_x = i32::MAX;
+        let mut min_y = i32::MAX;
+        let mut max_x = i32::MIN;
+        let mut max_y = i32::MIN;
 
         // finding borders
         for rect in &self.rects_used {
-            min_x = min_x.min(rect.x());
-            min_y = min_y.min(rect.y());
-            max_x = max_x.max(rect.x() + rect.width());
-            max_y = max_y.max(rect.y() + rect.height());
+            min_x = min_x.min(rect.x_total());
+            min_y = min_y.min(rect.y_total());
+            max_x = max_x.max(rect.x_total() + rect.width_total());
+            max_y = max_y.max(rect.y_total() + rect.height_total());
         }
 
         let mut new_width = max_x - min_x;
@@ -173,13 +173,13 @@ impl BinPacker for MaxRectsBin {
 
         if binary {
             // attempt to shrink to the next lower power of two
-            let mut cur_width = self.width;
+            let mut cur_width = self.bin_width;
             while new_width <= (cur_width >> 1) {
                 cur_width >>= 1;
             }
             new_width = cur_width;
 
-            let mut cur_height = self.height;
+            let mut cur_height = self.bin_height;
             while new_height <= (cur_height >> 1) {
                 cur_height >>= 1;
             }
@@ -187,24 +187,24 @@ impl BinPacker for MaxRectsBin {
         }
 
         // adjusting rectangle positions
-        if new_width != self.width || new_height != self.height {
+        if new_width != self.bin_width || new_height != self.bin_height {
             if min_x > 0 || min_y > 0 {
                 for rect in &mut self.rects_used {
-                    rect.set_x(rect.x() - min_x);
-                    rect.set_y(rect.y() - min_y);
+                    rect.set_x_total(rect.x_total() - min_x);
+                    rect.set_y_total(rect.y_total() - min_y);
                 }
                 for rect in &mut self.rects_free {
-                    rect.set_x(rect.x() - min_x);
-                    rect.set_y(rect.y() - min_y);
+                    rect.set_x_total(rect.x_total() - min_x);
+                    rect.set_y_total(rect.y_total() - min_y);
                 }
                 for rect in &mut self.new_rects_free {
-                    rect.set_x(rect.x() - min_x);
-                    rect.set_y(rect.y() - min_y);
+                    rect.set_x_total(rect.x_total() - min_x);
+                    rect.set_y_total(rect.y_total() - min_y);
                 }
             }
 
-            self.width = new_width;
-            self.height = new_height;
+            self.bin_width = new_width;
+            self.bin_height = new_height;
         }
     }
 
@@ -217,13 +217,13 @@ impl BinPacker for MaxRectsBin {
     }
 
     fn occupancy(&self) -> f32 {
-        if self.width == 0 || self.height == 0 {
+        if self.bin_width == 0 || self.bin_height == 0 {
             return 0.0;
         }
 
-        let area: u64 = self.rects_used.iter().map(|r| r.dim().area()).sum();
+        let area: i64 = self.rects_used.iter().map(|r| r.dim().area()).sum();
 
-        area as f32 / (self.width * self.height) as f32
+        area as f32 / (self.bin_width * self.bin_height) as f32
     }
 
     fn as_slice(&self) -> &[Rectangle] {
@@ -250,26 +250,30 @@ impl BinPacker for MaxRectsBin {
     }
 
     fn visualize(&self) -> String {
-        if let Some(output) = visualize_bin(self.width, self.height, &self.rects_used) {
+        if let Some(output) = visualize_bin(self.bin_width, self.bin_height, &self.rects_used) {
             output
         } else {
-            format!("{}", self)
+            format!("{self}")
         }
     }
 }
 
 impl MaxRectsBin {
     /// Creates an empty bin of the given size.
-    pub fn new(width: u32, height: u32) -> Self {
+    ///
+    /// Minimum width and height of a bin is 1.
+    pub fn new(width: i32, height: i32) -> Self {
         Self::with_capacity(width, height, 4)
     }
 
     /// Creates an empty bin of the given size and reserves space for at least `capacity` number
     /// of mapped rectangle to improve performance.
-    pub fn with_capacity(width: u32, height: u32, capacity: usize) -> Self {
+    ///
+    /// Minimum width and height of a bin is 1.
+    pub fn with_capacity(width: i32, height: i32, capacity: usize) -> Self {
         let mut result = Self {
-            width: width.max(1),
-            height: height.max(1),
+            bin_width: width.max(1),
+            bin_height: height.max(1),
             rects_used: Vec::with_capacity(capacity.max(4)),
             rects_free: Vec::with_capacity((capacity * 4).max(4 * 4)),
             new_rects_free_size: 0,
@@ -278,7 +282,7 @@ impl MaxRectsBin {
         };
         result
             .rects_free
-            .push(Rectangle::new(0, 0, Dimension::with_id(0, width, height)));
+            .push(Rectangle::new(0, 0, Dimension::with_id(0, result.bin_width, result.bin_height, 0)));
 
         result
     }
@@ -311,7 +315,7 @@ impl MaxRectsBin {
     /// or `None` otherwise.
     pub fn insert(&mut self, dim: &Dimension, rule: Heuristic) -> Option<Rectangle> {
         // Empty or too big dimension objects are always rejected
-        if dim.is_empty() || dim.width() > self.width || dim.height() > self.height {
+        if dim.is_empty() || dim.width_total() > self.bin_width || dim.height_total() > self.bin_height {
             return None;
         }
 
@@ -350,8 +354,8 @@ impl MaxRectsBin {
         let mut rejected = nodes.to_vec();
 
         while !rejected.is_empty() {
-            let mut best_score1 = u32::MAX;
-            let mut best_score2 = u32::MAX;
+            let mut best_score1 = i32::MAX;
+            let mut best_score2 = i32::MAX;
             let mut best_index = None;
             let mut best_node = None;
 
@@ -384,7 +388,7 @@ impl MaxRectsBin {
     ///
     /// Returns a tuple consisting of the primary and secondary placement scores, as well as
     /// the `Rectangle` structure where the requested `Dimension` can be placed.
-    fn score_rect(&self, dim: &Dimension, rule: Heuristic) -> (u32, u32, Option<Rectangle>) {
+    fn score_rect(&self, dim: &Dimension, rule: Heuristic) -> (i32, i32, Option<Rectangle>) {
         let (mut score1, mut score2, new_node) = match rule {
             Heuristic::BestShortSideFit => self.find_bssf(dim),
             Heuristic::BestLongSideFit => self.find_blsf(dim),
@@ -395,8 +399,8 @@ impl MaxRectsBin {
 
         // Cannot fit the current rectangle.
         if new_node.is_none() {
-            score1 = u32::MAX;
-            score2 = u32::MAX;
+            score1 = i32::MAX;
+            score2 = i32::MAX;
         }
 
         (score1, score2, new_node)
@@ -420,21 +424,20 @@ impl MaxRectsBin {
     }
 
     /// Attempts to find the best rectangle position in the bin, using the [`Heuristic::BottomLeftRule`] rule.
-    fn find_blr(&self, dim: &Dimension) -> (u32, u32, Option<Rectangle>) {
+    fn find_blr(&self, dim: &Dimension) -> (i32, i32, Option<Rectangle>) {
         let mut result = None;
 
-        let mut best_x = u32::MAX;
-        let mut best_y = u32::MAX;
+        let mut best_x = i32::MAX;
+        let mut best_y = i32::MAX;
         for rect in &self.rects_free {
-            if rect.width() >= dim.width() && rect.height() >= dim.height() {
-                let top_y = rect.y() + dim.height();
+            if rect.width_total() >= dim.width_total() && rect.height_total() >= dim.height_total() {
+                let top_y = rect.y_total() + dim.height_total();
 
-                if top_y < best_y || (top_y == best_y && rect.x() < best_x) {
+                if top_y < best_y || (top_y == best_y && rect.x_total() < best_x) {
                     let best_node = result.get_or_insert_with(|| Rectangle::new(0, 0, *dim));
-                    best_node.set_x(rect.x());
-                    best_node.set_y(rect.y());
+                    best_node.set_location_total(rect.x_total(), rect.y_total());
                     best_node.dim_mut().set_dimension(dim.width(), dim.height());
-                    best_x = rect.x();
+                    best_x = rect.x_total();
                     best_y = top_y;
                 }
             }
@@ -444,15 +447,15 @@ impl MaxRectsBin {
     }
 
     /// Attempts to find the best rectangle position in the bin, using the [`Heuristic::BestShortSideFit`] rule.
-    fn find_bssf(&self, dim: &Dimension) -> (u32, u32, Option<Rectangle>) {
+    fn find_bssf(&self, dim: &Dimension) -> (i32, i32, Option<Rectangle>) {
         let mut result = None;
 
-        let mut best_short_side_fit = u32::MAX;
-        let mut best_long_size_fit = u32::MAX;
+        let mut best_short_side_fit = i32::MAX;
+        let mut best_long_size_fit = i32::MAX;
         for rect in &self.rects_free {
-            if rect.width() >= dim.width() && rect.height() >= dim.height() {
-                let leftover_h = rect.width().abs_diff(dim.width());
-                let leftover_v = rect.height().abs_diff(dim.height());
+            if rect.width_total() >= dim.width_total() && rect.height_total() >= dim.height_total() {
+                let leftover_h = rect.width_total().abs_diff(dim.width_total()) as i32;
+                let leftover_v = rect.height_total().abs_diff(dim.height_total()) as i32;
                 let short_side_fit = leftover_h.min(leftover_v);
                 let long_side_fit = leftover_h.max(leftover_v);
 
@@ -460,8 +463,7 @@ impl MaxRectsBin {
                     || (short_side_fit == best_short_side_fit && long_side_fit < best_long_size_fit)
                 {
                     let best_node = result.get_or_insert_with(|| Rectangle::new(0, 0, *dim));
-                    best_node.set_x(rect.x());
-                    best_node.set_y(rect.y());
+                    best_node.set_location_total(rect.x_total(), rect.y_total());
                     best_node.dim_mut().set_dimension(dim.width(), dim.height());
                     best_short_side_fit = short_side_fit;
                     best_long_size_fit = long_side_fit;
@@ -473,15 +475,15 @@ impl MaxRectsBin {
     }
 
     /// Attempts to find the best rectangle position in the bin, using the [`Heuristic::BestLongSideFit`] rule.
-    fn find_blsf(&self, dim: &Dimension) -> (u32, u32, Option<Rectangle>) {
+    fn find_blsf(&self, dim: &Dimension) -> (i32, i32, Option<Rectangle>) {
         let mut result = None;
 
-        let mut best_short_side_fit = u32::MAX;
-        let mut best_long_size_fit = u32::MAX;
+        let mut best_short_side_fit = i32::MAX;
+        let mut best_long_size_fit = i32::MAX;
         for rect in &self.rects_free {
-            if rect.width() >= dim.width() && rect.height() >= dim.height() {
-                let leftover_h = rect.width().abs_diff(dim.width());
-                let leftover_v = rect.height().abs_diff(dim.height());
+            if rect.width_total() >= dim.width_total() && rect.height_total() >= dim.height_total() {
+                let leftover_h = rect.width_total().abs_diff(dim.width_total()) as i32;
+                let leftover_v = rect.height_total().abs_diff(dim.height_total()) as i32;
                 let short_side_fit = leftover_h.min(leftover_v);
                 let long_side_fit = leftover_h.max(leftover_v);
 
@@ -489,8 +491,7 @@ impl MaxRectsBin {
                     || (long_side_fit == best_long_size_fit && short_side_fit < best_short_side_fit)
                 {
                     let best_node = result.get_or_insert_with(|| Rectangle::new(0, 0, *dim));
-                    best_node.set_x(rect.x());
-                    best_node.set_y(rect.y());
+                    best_node.set_location_total(rect.x_total(), rect.y_total());
                     best_node.dim_mut().set_dimension(dim.width(), dim.height());
                     best_short_side_fit = short_side_fit;
                     best_long_size_fit = long_side_fit;
@@ -502,25 +503,24 @@ impl MaxRectsBin {
     }
 
     /// Attempts to find the best rectangle position in the bin, using the [`Heuristic::BestAreaFit`] rule.
-    fn find_baf(&self, dim: &Dimension) -> (u32, u32, Option<Rectangle>) {
+    fn find_baf(&self, dim: &Dimension) -> (i32, i32, Option<Rectangle>) {
         let mut result = None;
 
-        let mut best_area_fit = u32::MAX;
-        let mut best_short_side_fit = u32::MAX;
+        let mut best_area_fit = i64::MAX;
+        let mut best_short_side_fit = i64::MAX;
         // let mut best_fit = (u32::MAX, 0u32);
         for rect in &self.rects_free {
-            if rect.width() >= dim.width() && rect.height() >= dim.height() {
-                let leftover_h = rect.width().abs_diff(dim.width());
-                let leftover_v = rect.height().abs_diff(dim.height());
-                let short_side_fit = leftover_h.min(leftover_v);
+            if rect.width_total() >= dim.width_total() && rect.height_total() >= dim.height_total() {
+                let leftover_h = rect.width_total().abs_diff(dim.width_total());
+                let leftover_v = rect.height_total().abs_diff(dim.height_total());
+                let short_side_fit = leftover_h.min(leftover_v) as i64;
 
-                let area_fit = (rect.dim().area() - dim.area()) as u32;
+                let area_fit = rect.dim().area_total() - dim.area_total();
                 if area_fit < best_area_fit
                     || (area_fit == best_area_fit && short_side_fit < best_short_side_fit)
                 {
                     let best_node = result.get_or_insert_with(|| Rectangle::new(0, 0, *dim));
-                    best_node.set_x(rect.x());
-                    best_node.set_y(rect.y());
+                    best_node.set_location_total(rect.x_total(), rect.y_total());
                     best_node.dim_mut().set_dimension(dim.width(), dim.height());
                     best_area_fit = area_fit;
                     best_short_side_fit = short_side_fit;
@@ -528,23 +528,21 @@ impl MaxRectsBin {
             }
         }
 
-        (best_area_fit, best_short_side_fit, result)
+        (best_area_fit as i32, best_short_side_fit as i32, result)
     }
 
     /// Attempts to find the best rectangle position in the bin, using the [`Heuristic::ContactPointRule`] rule.
-    fn find_cpr(&self, dim: &Dimension) -> (u32, u32, Option<Rectangle>) {
+    fn find_cpr(&self, dim: &Dimension) -> (i32, i32, Option<Rectangle>) {
         let mut result = None;
 
         let mut best_score = -1;
         for rect in &self.rects_free {
-            if rect.width() >= dim.width() && rect.height() >= dim.height() {
+            if rect.width_total() >= dim.width_total() && rect.height_total() >= dim.height_total() {
                 let score =
-                    self.contact_point_score_node(rect.x(), rect.y(), dim.width(), dim.height())
-                        as i32;
+                    self.contact_point_score_node(rect.x_total(), rect.y_total(), dim.width_total(), dim.height_total());
                 if score > best_score {
                     let best_node = result.get_or_insert_with(|| Rectangle::new(0, 0, *dim));
-                    best_node.set_x(rect.x());
-                    best_node.set_y(rect.y());
+                    best_node.set_location_total(rect.x_total(), rect.y_total());
                     best_node.dim_mut().set_dimension(dim.width(), dim.height());
                     best_score = score;
                 }
@@ -552,35 +550,31 @@ impl MaxRectsBin {
         }
 
         // Reversing score since we are minimizing, but for contact point score, bigger is better.
-        let max_score = if best_score != -1 {
-            u32::MAX - best_score as u32
-        } else {
-            u32::MAX
-        };
+        best_score = -best_score;
 
         // No secondary score needed
-        (max_score, 0, result)
+        (best_score, 0, result)
     }
 
     /// Computes the placement score for the "CP" variant.
-    fn contact_point_score_node(&self, x: u32, y: u32, width: u32, height: u32) -> u32 {
+    fn contact_point_score_node(&self, x: i32, y: i32, width: i32, height: i32) -> i32 {
         let mut score = 0;
 
-        if x == 0 || x + width == self.width {
+        if x == 0 || x + width == self.bin_width {
             score += height;
         }
-        if y == 0 || y + height == self.height {
+        if y == 0 || y + height == self.bin_height {
             score += width;
         }
 
         for rect in &self.rects_used {
-            if rect.x() == x + width || rect.x() + rect.width() == x {
+            if rect.x_total() == x + width || rect.x_total() + rect.width_total() == x {
                 score +=
-                    Self::common_interval_length(rect.y(), rect.y() + rect.height(), y, y + height);
+                    Self::common_interval_length(rect.y_total(), rect.y_total() + rect.height_total(), y, y + height);
             }
-            if rect.y() == y + height || rect.y() + rect.height() == y {
+            if rect.y_total() == y + height || rect.y_total() + rect.height_total() == y {
                 score +=
-                    Self::common_interval_length(rect.x(), rect.x() + rect.width(), x, x + width);
+                    Self::common_interval_length(rect.x_total(), rect.x_total() + rect.width_total(), x, x + width);
             }
         }
 
@@ -590,10 +584,10 @@ impl MaxRectsBin {
     /// Returns whether the specified free node was split.
     fn split_free_node(&mut self, free: &Rectangle, used: &Rectangle) -> bool {
         // Test with SAT if the rectangles even intersect
-        if used.x() >= free.x() + free.width()
-            || used.x() + used.width() <= free.x()
-            || used.y() >= free.y() + free.height()
-            || used.y() + used.height() <= free.y()
+        if used.x_total() >= free.x_total() + free.width_total()
+            || used.x_total() + used.width_total() <= free.x_total()
+            || used.y_total() >= free.y_total() + free.height_total()
+            || used.y_total() + used.height_total() <= free.y_total()
         {
             return false;
         }
@@ -603,46 +597,42 @@ impl MaxRectsBin {
         // to avoid testing them against each other.
         self.new_rects_free_size = self.new_rects_free.len();
 
-        if used.x() < free.x() + free.width() && used.x() + used.width() > free.x() {
+        if used.x_total() < free.x_total() + free.width_total() && used.x_total() + used.width_total() > free.x_total() {
             // New node at the top side of the used node
-            if used.y() > free.y() && used.y() < free.y() + free.height() {
+            if used.y_total() > free.y_total() && used.y_total() < free.y_total() + free.height_total() {
                 let mut new_node = free.to_owned();
-                let new_y = new_node.y();
-                new_node.dim_mut().set_height(used.y() - new_y);
-                // self.rects_free.push(new_node);
+                let new_y = new_node.y_total();
+                new_node.dim_mut().set_height(used.y_total() - new_y);
                 self.insert_new_free_rect(&new_node);
             }
 
             // New node at the bottom side of the used node.
-            if used.y() + used.height() < free.y() + free.height() {
+            if used.y_total() + used.height_total() < free.y_total() + free.height_total() {
                 let mut new_node = free.to_owned();
-                new_node.set_y(used.y() + used.height());
+                new_node.set_y_total(used.y_total() + used.height_total());
                 new_node
                     .dim_mut()
-                    .set_height(free.y() + free.height() - (used.y() + used.height()));
-                // self.rects_free.push(new_node);
+                    .set_height(free.y_total() + free.height_total() - (used.y_total() + used.height_total()));
                 self.insert_new_free_rect(&new_node);
             }
         }
 
-        if used.y() < free.y() + free.height() && used.y() + used.height() > free.y() {
+        if used.y_total() < free.y_total() + free.height_total() && used.y_total() + used.height_total() > free.y_total() {
             // New node at the left side of the used node.
-            if used.x() > free.x() && used.x() < free.x() + free.width() {
+            if used.x_total() > free.x_total() && used.x_total() < free.x_total() + free.width_total() {
                 let mut new_node = free.to_owned();
-                let new_x = new_node.x();
-                new_node.dim_mut().set_width(used.x() - new_x);
-                // self.rects_free.push(new_node);
+                let new_x = new_node.x_total();
+                new_node.dim_mut().set_width(used.x_total() - new_x);
                 self.insert_new_free_rect(&new_node);
             }
 
             // New node at the right side of the used node.
-            if used.x() + used.width() < free.x() + free.width() {
+            if used.x_total() + used.width_total() < free.x_total() + free.width_total() {
                 let mut new_node = free.to_owned();
-                new_node.set_x(used.x() + used.width());
+                new_node.set_x_total(used.x_total() + used.width_total());
                 new_node
                     .dim_mut()
-                    .set_width(free.x() + free.width() - (used.x() + used.width()));
-                // self.rects_free.push(new_node);
+                    .set_width(free.x_total() + free.width_total() - (used.x_total() + used.width_total()));
                 self.insert_new_free_rect(&new_node);
             }
         }
@@ -651,20 +641,20 @@ impl MaxRectsBin {
     }
 
     fn insert_new_free_rect(&mut self, new_node: &Rectangle) {
-        debug_assert!(new_node.width() > 0);
-        debug_assert!(new_node.height() > 0);
+        debug_assert!(new_node.width_total() > 0);
+        debug_assert!(new_node.height_total() > 0);
 
         let mut i = 0usize;
         while i < self.new_rects_free_size {
             let cur_node = &self.new_rects_free[i];
 
             // This new free rectangle is already accounted for?
-            if cur_node.contains(new_node) {
+            if cur_node.contains_total(new_node) {
                 return;
             }
 
             // Does this new free rectangle obsolete a previous new free rectangle?
-            if new_node.contains(cur_node) {
+            if new_node.contains_total(cur_node) {
                 // Remove i'th new free rectangle, but do so by retaining the order
                 // of the older vs newest free rectangles that we may still be placing
                 // in calling function split_free_node().
@@ -681,7 +671,7 @@ impl MaxRectsBin {
     /// Goes through the free rectangles list and removes any redundant nodes.
     fn prune_free_list(&mut self) {
         for rect in &self.rects_free {
-            self.new_rects_free.retain(|r| !rect.contains(r));
+            self.new_rects_free.retain(|r| !rect.contains_total(r));
         }
 
         // For testing purposes: comment the block above and uncomment the block below
@@ -689,13 +679,13 @@ impl MaxRectsBin {
         //     let mut j = 0usize;
         //     let mut new_size = self.new_rects_free.len();
         //     while j < new_size {
-        //         if rect.contains(&self.new_rects_free[j]) {
+        //         if rect.contains_total(&self.new_rects_free[j]) {
         //             self.new_rects_free.swap_remove(j);
         //             new_size -= 1;
         //         } else {
         //             // The old free rectangles can never be contained in any of the new free
         //             // rectangles (the new free rectangles keep shrinking in size)
-        //             assert!(!rect.contains(&self.new_rects_free[j]));
+        //             assert!(!rect.contains_total(&self.new_rects_free[j]));
         //
         //             j += 1;
         //         }
@@ -708,14 +698,14 @@ impl MaxRectsBin {
         #[cfg(debug_assertions)]
         for (i, rect1) in self.rects_free.iter().enumerate() {
             for rect2 in self.rects_free.iter().skip(i + 1) {
-                debug_assert!(!rect1.contains(rect2));
-                debug_assert!(!rect2.contains(rect1));
+                debug_assert!(!rect1.contains_total(rect2));
+                debug_assert!(!rect2.contains_total(rect1));
             }
         }
     }
 
     /// Returns 0 if the two intervals i1 and i2 are disjoint, or the length of their overlap, otherwise.
-    fn common_interval_length(i1start: u32, i1end: u32, i2start: u32, i2end: u32) -> u32 {
+    fn common_interval_length(i1start: i32, i1end: i32, i2start: i32, i2end: i32) -> i32 {
         if i1end < i2start || i2end < i1start {
             0
         } else {
@@ -740,8 +730,8 @@ impl Display for MaxRectsBin {
         write!(
             f,
             "Bin(width: {}, height: {}, rectangles: {})",
-            self.width,
-            self.height,
+            self.bin_width,
+            self.bin_height,
             self.rects_used.len()
         )
     }
@@ -778,8 +768,8 @@ impl Display for MaxRectsBin {
 /// ```
 pub fn pack_bins(
     nodes: &[Dimension],
-    bin_width: u32,
-    bin_height: u32,
+    bin_width: i32,
+    bin_height: i32,
     rule: Heuristic,
     optimized: bool,
 ) -> Vec<MaxRectsBin> {
@@ -793,8 +783,8 @@ pub fn pack_bins(
 /// Inserts nodes via insert_list().
 fn pack_bins_list(
     nodes: &[Dimension],
-    bin_width: u32,
-    bin_height: u32,
+    bin_width: i32,
+    bin_height: i32,
     rule: Heuristic,
 ) -> Vec<MaxRectsBin> {
     let mut bins = Vec::new();
@@ -841,8 +831,8 @@ fn pack_bins_list(
 /// Inserts nodes via insert().
 fn pack_bins_single(
     nodes: &[Dimension],
-    bin_width: u32,
-    bin_height: u32,
+    bin_width: i32,
+    bin_height: i32,
     rule: Heuristic,
 ) -> Vec<MaxRectsBin> {
     let mut bins = Vec::new();
@@ -851,7 +841,7 @@ fn pack_bins_single(
     }
 
     for node in nodes {
-        if node.width() > bin_width || node.height() > bin_height {
+        if node.width_total() > bin_width || node.height_total() > bin_height {
             continue;
         }
 

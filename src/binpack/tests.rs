@@ -2,7 +2,7 @@ use super::*;
 
 fn bin_shrink(bin_type: BinType) {
     let mut bin = bin_new(bin_type, 16, 16);
-    bin.insert(&Dimension::new(6, 7));
+    bin.insert(&Dimension::with_padding(4, 5, 1));
     bin.shrink(true);
 
     assert_eq!(8, bin.width());
@@ -15,13 +15,13 @@ fn bin_shrink(bin_type: BinType) {
 
 fn bin_insert(bin_type: BinType) {
     let nodes = vec![
-        Dimension::new(2, 4),
-        Dimension::new(8, 6),
-        Dimension::new(12, 5),
-        Dimension::new(6, 6),
-        Dimension::new(8, 8),
-        Dimension::new(3, 8),
-        Dimension::new(10, 5),
+        Dimension::with_padding(2, 4, 0),
+        Dimension::with_padding(6, 4, 1),
+        Dimension::with_padding(10, 3, 1),
+        Dimension::with_padding(6, 6, 0),
+        Dimension::with_padding(4, 4, 2),
+        Dimension::with_padding(3, 8, 0),
+        Dimension::with_padding(8, 3, 1),
     ];
 
     let mut bin = bin_new(bin_type, 16, 16);
@@ -36,20 +36,20 @@ fn bin_insert(bin_type: BinType) {
 }
 
 fn bin_insert_list(bin_type: BinType) {
-    let mut nodes = vec![
-        Dimension::new(2, 4),
-        Dimension::new(8, 6),
-        Dimension::new(12, 5),
-        Dimension::new(6, 6),
-        Dimension::new(8, 8),
-        Dimension::new(3, 8),
-        Dimension::new(10, 5),
+    let nodes = vec![
+        Dimension::with_padding(2, 4, 0),
+        Dimension::with_padding(6, 4, 1),
+        Dimension::with_padding(10, 3, 1),
+        Dimension::with_padding(6, 6, 0),
+        Dimension::with_padding(4, 4, 2),
+        Dimension::with_padding(3, 8, 0),
+        Dimension::with_padding(8, 3, 1),
     ];
 
     let mut bin = bin_new(bin_type, 16, 16);
     println!("{:?}::Insert_list: Creating bin({}, {})", bin_type, bin.width(), bin.height());
 
-    bin.insert_list(&mut nodes);
+    bin.insert_list(&nodes);
     println!("{} node(s) in bin, {} node(s) rejected, occupancy: {}:\n{}",
              bin.len(), nodes.len(), bin.occupancy(), bin.visualize());
     println!("{bin}");
