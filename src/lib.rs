@@ -3,6 +3,7 @@
 
 pub use crate::binpack::BinPacker;
 pub use crate::binpack::BinType;
+pub use crate::binpack::BinError;
 pub use crate::binpack::bin_new;
 pub use crate::binpack::bin_with_capacity;
 pub use crate::binpack::pack_bins;

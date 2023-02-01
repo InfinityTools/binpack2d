@@ -1,6 +1,4 @@
-use crate::binpack::BinPacker;
-use crate::dimension::Dimension;
-use super::{RectHeuristic, SplitHeuristic, GuillotineBin};
+use super::*;
 
 #[test]
 fn bin_shrink() {

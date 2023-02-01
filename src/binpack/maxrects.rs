@@ -59,6 +59,7 @@
 
 use std::fmt::{Display, Formatter};
 use std::slice::Iter;
+use crate::binpack::BinError;
 
 use super::{visualize_bin, BinPacker};
 use crate::dimension::Dimension;
@@ -747,9 +748,11 @@ impl Display for MaxRectsBin {
 ///
 /// [`insert_list`]: MaxRectsBin::insert_list
 ///
-/// Nodes which exceed the given bin dimension are silently skipped.
+/// Returns a list of bins with the packed rectangle nodes as a [`Result`] value.
 ///
-/// Returns a list of bins with the packed rectangle nodes.
+/// # Errors
+///
+/// A [`BinError`] is returned for nodes which are either empty or too big for the bin.
 ///
 /// # Examples
 /// ```
@@ -761,7 +764,8 @@ impl Display for MaxRectsBin {
 /// let nodes = vec![Dimension::new(2, 4), Dimension::new(8, 6), Dimension::new(6, 6)];
 ///
 /// // Returned list of bin object contains all nodes, placed according to the given heuristic rule
-/// let bins = pack_bins(&nodes, 16, 12, Heuristic::BestShortSideFit, true);
+/// let bins = pack_bins(&nodes, 16, 12, Heuristic::BestShortSideFit, true)
+///     .expect("Items should not be rejected");
 ///
 /// assert_eq!(1, bins.len());
 /// assert_eq!(3, bins[0].len());
@@ -772,7 +776,7 @@ pub fn pack_bins(
     bin_height: i32,
     rule: Heuristic,
     optimized: bool,
-) -> Vec<MaxRectsBin> {
+) -> Result<Vec<MaxRectsBin>, BinError> {
     if optimized {
         pack_bins_list(nodes, bin_width, bin_height, rule)
     } else {
@@ -786,10 +790,10 @@ fn pack_bins_list(
     bin_width: i32,
     bin_height: i32,
     rule: Heuristic,
-) -> Vec<MaxRectsBin> {
+) -> Result<Vec<MaxRectsBin>, BinError> {
     let mut bins = Vec::new();
     if nodes.is_empty() || bin_width == 0 || bin_height == 0 {
-        return bins;
+        return Ok(bins);
     }
 
     // first pass is done separately to avoid a (potentially) costly clone operation
@@ -812,8 +816,23 @@ fn pack_bins_list(
         let (inserted, mut rejected) = bin.insert_list(&nodes_left, rule);
 
         if inserted.is_empty() && !rejected.is_empty() {
-            // remaining nodes are too big and will be silently skipped
-            rejected.clear();
+            // remaining nodes are too big or too small
+            let result = rejected.iter().map(|r| {
+                if r.width_total() == 0 || r.height_total() == 0 {
+                    BinError::ItemTooSmall
+                } else if r.width_total() > bin_width || r.height_total() > bin_height {
+                    BinError::ItemTooBig
+                } else {
+                    BinError::Unspecified
+                }
+            }).next();
+            if let Some(result) = result {
+                return Err(result);
+            } else {
+                // Should not happen
+                eprintln!("pack_bins(): Could not insert remaining items");
+                rejected.clear();
+            }
         }
 
         if !inserted.is_empty() {
@@ -825,7 +844,7 @@ fn pack_bins_list(
         nodes_left.append(&mut rejected);
     }
 
-    bins
+    Ok(bins)
 }
 
 /// Inserts nodes via insert().
@@ -834,15 +853,17 @@ fn pack_bins_single(
     bin_width: i32,
     bin_height: i32,
     rule: Heuristic,
-) -> Vec<MaxRectsBin> {
+) -> Result<Vec<MaxRectsBin>, BinError> {
     let mut bins = Vec::new();
     if nodes.is_empty() || bin_width == 0 || bin_height == 0 {
-        return bins;
+        return Ok(bins);
     }
 
     for node in nodes {
-        if node.width_total() > bin_width || node.height_total() > bin_height {
-            continue;
+        if node.is_empty() {
+            return Err(BinError::ItemTooSmall);
+        } else if node.width_total() > bin_width || node.height_total() > bin_height {
+            return Err(BinError::ItemTooBig);
         }
 
         // try inserting node into existing bins
@@ -863,7 +884,7 @@ fn pack_bins_single(
         }
     }
 
-    bins
+    Ok(bins)
 }
 
 

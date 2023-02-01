@@ -55,11 +55,12 @@
 //! println!("Occupancy of the bin: {:.1} %", bin.occupancy() * 100.0);
 //! ```
 
+use std::error::Error;
 use self::guillotine::GuillotineBin;
 use self::maxrects::MaxRectsBin;
 use crate::dimension::Dimension;
 use crate::rectangle::Rectangle;
-use std::fmt::{Display};
+use std::fmt::{Display, Formatter};
 use std::slice::Iter;
 
 pub mod guillotine;
@@ -193,6 +194,33 @@ pub trait BinPacker: Display {
     fn visualize(&self) -> String;
 }
 
+
+/// This error is returned when items could not be placed into bins.
+#[derive(Debug, PartialEq)]
+pub enum BinError {
+    /// The item does not fit into the bin, because item width or height is larger than
+    /// bin width or height.
+    ItemTooBig,
+    /// The item has a dimension of 0 and can therefore not be meaningfully placed into the bin.
+    ItemTooSmall,
+    /// A generic "catch-all" error, which is returned when the cause could not be determined.
+    Unspecified,
+}
+
+impl Display for BinError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            Self::ItemTooBig => "item is too big for the bin",
+            Self::ItemTooSmall => "item with no space cannot be placed into the bin",
+            _ => "unspecified error",
+        };
+        f.write_str(s)
+    }
+}
+
+impl Error for BinError {}
+
+
 /// Creates an empty bin of the given size, using the specified [`BinType`] implementation.
 pub fn bin_new(bin_type: BinType, width: i32, height: i32) -> Box<dyn BinPacker> {
     match bin_type {
@@ -225,9 +253,11 @@ pub fn bin_with_capacity(
 ///
 /// [`insert_list`]: BinPacker::insert_list
 ///
-/// Nodes which exceed the given bin dimension are silently skipped.
+/// Returns a list of bins with the packed rectangle nodes as a [`Result`] value.
 ///
-/// Returns a list of bins with the packed rectangle nodes.
+/// # Errors
+///
+/// A [`BinError`] is returned for nodes which are either empty or too big for the bin.
 ///
 /// # Examples
 /// ```
@@ -237,7 +267,8 @@ pub fn bin_with_capacity(
 /// let nodes = vec![Dimension::new(2, 4), Dimension::new(8, 6), Dimension::new(6, 6)];
 ///
 /// // Returned list of bin object contains all nodes
-/// let bins = pack_bins(BinType::Guillotine, &nodes, 16, 12, true);
+/// let bins = pack_bins(BinType::Guillotine, &nodes, 16, 12, true)
+///     .expect("Items should not be rejected");
 ///
 /// assert_eq!(1, bins.len());
 /// assert_eq!(3, bins[0].len());
@@ -248,7 +279,7 @@ pub fn pack_bins(
     bin_width: i32,
     bin_height: i32,
     optimized: bool,
-) -> Vec<Box<dyn BinPacker>> {
+) -> Result<Vec<Box<dyn BinPacker>>, BinError> {
     if optimized {
         pack_bins_list(bin_type, nodes, bin_width, bin_height)
     } else {
@@ -262,10 +293,10 @@ fn pack_bins_list(
     nodes: &[Dimension],
     bin_width: i32,
     bin_height: i32,
-) -> Vec<Box<dyn BinPacker>> {
+) -> Result<Vec<Box<dyn BinPacker>>, BinError> {
     let mut bins = Vec::new();
     if nodes.is_empty() || bin_width == 0 || bin_height == 0 {
-        return bins;
+        return Ok(bins);
     }
 
     // first pass is done separately to avoid a (potentially) costly clone operation
@@ -288,8 +319,23 @@ fn pack_bins_list(
         let (inserted, mut rejected) = bin.insert_list(&nodes_left);
 
         if inserted.is_empty() && !rejected.is_empty() {
-            // remaining nodes are too big and will be silently skipped
-            rejected.clear();
+            // remaining nodes are too big or too small
+            let result = rejected.iter().map(|r| {
+                if r.width_total() == 0 || r.height_total() == 0 {
+                    BinError::ItemTooSmall
+                } else if r.width_total() > bin_width || r.height_total() > bin_height {
+                    BinError::ItemTooBig
+                } else {
+                    BinError::Unspecified
+                }
+            }).next();
+            if let Some(result) = result {
+                return Err(result);
+            } else {
+                // Should not happen
+                eprintln!("pack_bins(): Could not insert remaining items");
+                rejected.clear();
+            }
         }
 
         if !inserted.is_empty() {
@@ -301,7 +347,7 @@ fn pack_bins_list(
         nodes_left.append(&mut rejected);
     }
 
-    bins
+    Ok(bins)
 }
 
 /// Inserts nodes via insert().
@@ -310,15 +356,17 @@ fn pack_bins_single(
     nodes: &[Dimension],
     bin_width: i32,
     bin_height: i32
-) -> Vec<Box<dyn BinPacker>> {
+) -> Result<Vec<Box<dyn BinPacker>>, BinError> {
     let mut bins = Vec::new();
     if nodes.is_empty() || bin_width == 0 || bin_height == 0 {
-        return bins;
+        return Ok(bins);
     }
 
     for node in nodes {
-        if node.width_total() > bin_width || node.height_total() > bin_height {
-            continue;
+        if node.is_empty() {
+            return Err(BinError::ItemTooSmall);
+        } else  if node.width_total() > bin_width || node.height_total() > bin_height {
+            return Err(BinError::ItemTooBig);
         }
 
         // try inserting node into existing bins
@@ -339,7 +387,7 @@ fn pack_bins_single(
         }
     }
 
-    bins
+    Ok(bins)
 }
 
 /// A helper method for visualizing bin content.
