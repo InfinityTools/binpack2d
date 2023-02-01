@@ -1,5 +1,7 @@
 # binpack2d
 
+[![Actions Status](https://github.com/InfinityTools/binpack2d/workflows/Cargo%20Build%20%26%20Test/badge.svg)](https://github.com/InfinityTools/binpack2d/actions)
+
 `binpack2d` is a Rust library for packing sets of arbitrary 2d rectangles into a larger bin.
 The algorithms are all approximations and use various heuristics, since the problem itself is intractable.
 
