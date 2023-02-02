@@ -1,4 +1,4 @@
-use crate::{GUILLOTINE_CHOICES, GUILLOTINE_METHODS, MAXRECTS_RULES, prepare_nodes_list};
+use crate::{prepare_nodes_list, GUILLOTINE_CHOICES, GUILLOTINE_METHODS, MAXRECTS_RULES};
 use binpack2d::guillotine::GuillotineBin;
 use binpack2d::maxrects::MaxRectsBin;
 use binpack2d::BinPacker;

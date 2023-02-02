@@ -1,3 +1,4 @@
+use crate::{prepare_nodes_list, GUILLOTINE_CHOICES, GUILLOTINE_METHODS, MAXRECTS_RULES};
 use binpack2d::guillotine::GuillotineBin;
 use binpack2d::maxrects::MaxRectsBin;
 use binpack2d::{bin_new, BinPacker, BinType, Dimension, Rectangle};
@@ -5,8 +6,7 @@ use rand::prelude::{Rng, SeedableRng, StdRng};
 use std::fs::File;
 use std::io::{Error, Write};
 use std::path::Path;
-use svg_fmt::{Align, BeginSvg, black, EndSvg, Fill, rectangle, rgb, Stroke, text, white};
-use crate::{GUILLOTINE_CHOICES, GUILLOTINE_METHODS, MAXRECTS_RULES, prepare_nodes_list};
+use svg_fmt::{black, rectangle, rgb, text, white, Align, BeginSvg, EndSvg, Fill, Stroke};
 
 /// Exports visualization of packed MaxRects bins as SVG graphics.
 pub fn export_maxrects(folder: &str) -> Result<(), Error> {
@@ -181,7 +181,11 @@ fn svg_rectangle(rect: &Rectangle, index: usize, count: usize) -> String {
 
 /// Creates a folder of given name and returns success state.
 fn create_dir(folder: &str) -> Result<String, Error> {
-    let folder = if folder.is_empty() { String::from(".") } else { folder.to_string() };
+    let folder = if folder.is_empty() {
+        String::from(".")
+    } else {
+        folder.to_string()
+    };
 
     if !Path::new(&folder).is_dir() {
         std::fs::create_dir(&folder)?;

@@ -6,6 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-binpack2d
+binpack2d = "*"
 rand = "0.8.5"
 svg_fmt = "0.4.1"

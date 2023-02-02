@@ -1,7 +1,7 @@
-use binpack2d::Dimension;
 use binpack2d::guillotine::{RectHeuristic, SplitHeuristic};
 use binpack2d::maxrects::Heuristic;
-use rand::prelude::{Rng, StdRng, SeedableRng};
+use binpack2d::Dimension;
+use rand::prelude::{Rng, SeedableRng, StdRng};
 
 pub mod benchmarks;
 pub mod bin_svg;
