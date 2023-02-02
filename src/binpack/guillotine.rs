@@ -76,10 +76,10 @@
 //! println!("Occupancy of the bin: {:.1} %", bin.occupancy() * 100.0);
 //! ```
 
+use crate::binpack::BinError;
 use std::fmt::{Display, Formatter};
 use std::mem;
 use std::slice::Iter;
-use crate::binpack::BinError;
 
 use super::{visualize_bin, BinPacker};
 use crate::dimension::Dimension;
@@ -400,7 +400,10 @@ impl GuillotineBin {
         method: SplitHeuristic,
     ) -> Option<Rectangle> {
         // Empty or too big dimension objects are always rejected
-        if dim.is_empty() || dim.width_total() > self.bin_width || dim.height_total() > self.bin_height {
+        if dim.is_empty()
+            || dim.width_total() > self.bin_width
+            || dim.height_total() > self.bin_height
+        {
             return None;
         }
 
@@ -478,7 +481,9 @@ impl GuillotineBin {
                 while j < nodes_size {
                     let node = &rejected[j];
 
-                    if node.width_total() == free_rect.width_total() && node.height_total() == free_rect.height_total() {
+                    if node.width_total() == free_rect.width_total()
+                        && node.height_total() == free_rect.height_total()
+                    {
                         // If this rectangle is a perfect match, we pick it instantly
                         best_free_rect = i;
                         best_node = j;
@@ -610,21 +615,26 @@ impl GuillotineBin {
 
         // Try each free rectangle to find the best one for placement
         for (i, rect) in self.rects_free.iter().enumerate() {
-            if dim.width_total() == rect.width_total() && dim.height_total() == rect.height_total() {
+            if dim.width_total() == rect.width_total() && dim.height_total() == rect.height_total()
+            {
                 // If this is a perfect fit upright, choose it immediately
                 let node = best_node.get_or_insert_with(|| Rectangle::new(0, 0, *dim));
                 node.set_location_total(rect.x_total(), rect.y_total());
                 node.dim_mut().set_dimension(dim.width(), dim.height());
                 node_index = i;
                 break;
-            } else if dim.height_total() == rect.width_total() && dim.width_total() == rect.height_total() {
+            } else if dim.height_total() == rect.width_total()
+                && dim.width_total() == rect.height_total()
+            {
                 // If this is a perfect fit sideways, choose it
                 let node = best_node.get_or_insert_with(|| Rectangle::new(0, 0, *dim));
                 node.set_location_total(rect.x_total(), rect.y_total());
                 node.dim_mut().set_dimension(dim.height(), dim.width());
                 node_index = i;
                 break;
-            } else if dim.width_total() <= rect.width_total() && dim.height_total() <= rect.height_total() {
+            } else if dim.width_total() <= rect.width_total()
+                && dim.height_total() <= rect.height_total()
+            {
                 // Does the rectangle fit upright?
                 let score = self.score_by_heuristic(dim, rect, choice);
                 if score < best_score {
@@ -634,7 +644,9 @@ impl GuillotineBin {
                     best_score = score;
                     node_index = i;
                 }
-            } else if dim.height_total() <= rect.width_total() && dim.width_total() <= rect.height_total() {
+            } else if dim.height_total() <= rect.width_total()
+                && dim.width_total() <= rect.height_total()
+            {
                 // Does the rectangle fit sideways?
                 let score = self.score_by_heuristic(dim, rect, choice);
                 if score < best_score {
@@ -732,10 +744,14 @@ impl GuillotineBin {
             SplitHeuristic::LongerLeftoverAxis => w > h,
             // Maximize the larger area == minimize the smaller area.
             // Tries to make the single bigger rectangle.
-            SplitHeuristic::MinimizeArea => placed_rect.width_total() * h > w * placed_rect.height_total(),
+            SplitHeuristic::MinimizeArea => {
+                placed_rect.width_total() * h > w * placed_rect.height_total()
+            }
             // Maximize the smaller area == minimize the larger area.
             // Tries to make the rectangles more even-sized.
-            SplitHeuristic::MaximizeArea => placed_rect.width_total() * h <= w * placed_rect.height_total(),
+            SplitHeuristic::MaximizeArea => {
+                placed_rect.width_total() * h <= w * placed_rect.height_total()
+            }
             // Split along the shorter total axis
             SplitHeuristic::ShorterAxis => free_rect.width_total() <= free_rect.height_total(),
             // Split along the longer total axis
@@ -759,7 +775,12 @@ impl GuillotineBin {
         let mut bottom = Rectangle::new(
             free_rect.x_total(),
             free_rect.y_total() + placed_rect.height_total(),
-            Dimension::with_id(0, 0, free_rect.height_total() - placed_rect.height_total(), 0),
+            Dimension::with_id(
+                0,
+                0,
+                free_rect.height_total() - placed_rect.height_total(),
+                0,
+            ),
         );
 
         let mut right = Rectangle::new(
@@ -803,7 +824,8 @@ impl GuillotineBin {
             let mut j = i + 1;
             while j < free_size {
                 let rect2 = &self.rects_free[j];
-                if rect1.width_total() == rect2.width_total() && rect1.x_total() == rect2.x_total() {
+                if rect1.width_total() == rect2.width_total() && rect1.x_total() == rect2.x_total()
+                {
                     if rect1.y_total() == rect2.y_total() + rect2.height_total() {
                         rect1.set_y_total(rect1.y_total() - rect2.height_total());
                         let rect1_height = rect1.height();
@@ -820,7 +842,9 @@ impl GuillotineBin {
                     } else {
                         j += 1;
                     }
-                } else if rect1.height_total() == rect2.height_total() && rect1.y_total() == rect2.y_total() {
+                } else if rect1.height_total() == rect2.height_total()
+                    && rect1.y_total() == rect2.y_total()
+                {
                     if rect1.x_total() == rect2.x_total() + rect2.width_total() {
                         rect1.set_x_total(rect1.x_total() - rect2.width_total());
                         let rect1_width = rect1.width();
@@ -959,15 +983,18 @@ fn pack_bins_list(
 
         if inserted.is_empty() && !rejected.is_empty() {
             // remaining nodes are too big or too small
-            let result = rejected.iter().map(|r| {
-                if r.width_total() == 0 || r.height_total() == 0 {
-                    BinError::ItemTooSmall
-                } else if r.width_total() > bin_width || r.height_total() > bin_height {
-                    BinError::ItemTooBig
-                } else {
-                    BinError::Unspecified
-                }
-            }).next();
+            let result = rejected
+                .iter()
+                .map(|r| {
+                    if r.width_total() == 0 || r.height_total() == 0 {
+                        BinError::ItemTooSmall
+                    } else if r.width_total() > bin_width || r.height_total() > bin_height {
+                        BinError::ItemTooBig
+                    } else {
+                        BinError::Unspecified
+                    }
+                })
+                .next();
             if let Some(result) = result {
                 return Err(result);
             } else {
@@ -1023,14 +1050,14 @@ fn pack_bins_single(
         if !inserted {
             bins.push(GuillotineBin::new(bin_width, bin_height));
             if let Some(bin) = bins.last_mut() {
-                bin.insert(node, merge, choice, method).expect("Object should fit into the bin");
+                bin.insert(node, merge, choice, method)
+                    .expect("Object should fit into the bin");
             }
         }
     }
 
     Ok(bins)
 }
-
 
 #[cfg(test)]
 mod tests;

@@ -1,5 +1,5 @@
-use crate::dimension::Dimension;
 use super::Rectangle;
+use crate::dimension::Dimension;
 
 #[test]
 fn rectangle_get() {
@@ -81,8 +81,12 @@ fn rectangle_union() {
     let r2 = Rectangle::new(7, 4, Dimension::new(2, 2));
     let r3 = Rectangle::new(10, 10, Dimension::new(5, 5));
 
-    assert_eq!(Rectangle::new(2, 2, Dimension::with_id(1, 7, 5, 0)),
-               r1.union(&r2, Some(1)));
-    assert_eq!(Rectangle::new(2, 2, Dimension::with_id(2, 13, 13, 0)),
-               r1.union(&r3, Some(2)));
+    assert_eq!(
+        Rectangle::new(2, 2, Dimension::with_id(1, 7, 5, 0)),
+        r1.union(&r2, Some(1))
+    );
+    assert_eq!(
+        Rectangle::new(2, 2, Dimension::with_id(2, 13, 13, 0)),
+        r1.union(&r3, Some(2))
+    );
 }

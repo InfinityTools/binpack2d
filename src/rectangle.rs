@@ -1,7 +1,7 @@
 //! A structure that represents the placement of a single object in a bin.
 
-use std::fmt::{Display, Formatter};
 use super::dimension::{self, Dimension};
+use std::fmt::{Display, Formatter};
 
 /// `Rectangle` specifies an area in a coordinate space that is defined an upper-left point,
 /// as defined by `x` and `y`, and the dimensions, defined by the [`Dimension`] object.
@@ -216,10 +216,13 @@ impl From<Dimension> for Rectangle {
 
 impl Display for Rectangle {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Rectangle(x: {}, y: {}, dim: {})", self.x, self.y, self.dim)
+        write!(
+            f,
+            "Rectangle(x: {}, y: {}, dim: {})",
+            self.x, self.y, self.dim
+        )
     }
 }
-
 
 #[cfg(test)]
 mod tests;

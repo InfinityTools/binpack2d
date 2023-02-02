@@ -178,11 +178,13 @@ impl Default for Dimension {
 
 impl Display for Dimension {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Dimension(id: {}, width: {}, height: {}, padding: {})",
-               self.id, self.width, self.height, self.padding)
+        write!(
+            f,
+            "Dimension(id: {}, width: {}, height: {}, padding: {})",
+            self.id, self.width, self.height, self.padding
+        )
     }
 }
-
 
 #[cfg(test)]
 mod tests;

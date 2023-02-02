@@ -55,11 +55,11 @@
 //! println!("Occupancy of the bin: {:.1} %", bin.occupancy() * 100.0);
 //! ```
 
-use std::error::Error;
 use self::guillotine::GuillotineBin;
 use self::maxrects::MaxRectsBin;
 use crate::dimension::Dimension;
 use crate::rectangle::Rectangle;
+use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::slice::Iter;
 
@@ -194,14 +194,12 @@ pub trait BinPacker: Display {
     fn visualize(&self) -> String;
 }
 
-
 /// This error is returned when items could not be placed into bins.
 #[derive(Debug, PartialEq)]
 pub enum BinError {
-    /// The item does not fit into the bin, because item width or height is larger than
-    /// bin width or height.
+    /// Item does not fit into the bin because item dimension is bigger than bin dimension.
     ItemTooBig,
-    /// The item has a dimension of 0 and can therefore not be meaningfully placed into the bin.
+    /// Item has a dimension of 0 and can therefore not be meaningfully placed into the bin.
     ItemTooSmall,
     /// A generic "catch-all" error, which is returned when the cause could not be determined.
     Unspecified,
@@ -219,7 +217,6 @@ impl Display for BinError {
 }
 
 impl Error for BinError {}
-
 
 /// Creates an empty bin of the given size, using the specified [`BinType`] implementation.
 pub fn bin_new(bin_type: BinType, width: i32, height: i32) -> Box<dyn BinPacker> {
@@ -320,15 +317,18 @@ fn pack_bins_list(
 
         if inserted.is_empty() && !rejected.is_empty() {
             // remaining nodes are too big or too small
-            let result = rejected.iter().map(|r| {
-                if r.width_total() == 0 || r.height_total() == 0 {
-                    BinError::ItemTooSmall
-                } else if r.width_total() > bin_width || r.height_total() > bin_height {
-                    BinError::ItemTooBig
-                } else {
-                    BinError::Unspecified
-                }
-            }).next();
+            let result = rejected
+                .iter()
+                .map(|r| {
+                    if r.width_total() == 0 || r.height_total() == 0 {
+                        BinError::ItemTooSmall
+                    } else if r.width_total() > bin_width || r.height_total() > bin_height {
+                        BinError::ItemTooBig
+                    } else {
+                        BinError::Unspecified
+                    }
+                })
+                .next();
             if let Some(result) = result {
                 return Err(result);
             } else {
@@ -355,7 +355,7 @@ fn pack_bins_single(
     bin_type: BinType,
     nodes: &[Dimension],
     bin_width: i32,
-    bin_height: i32
+    bin_height: i32,
 ) -> Result<Vec<Box<dyn BinPacker>>, BinError> {
     let mut bins = Vec::new();
     if nodes.is_empty() || bin_width == 0 || bin_height == 0 {
@@ -365,7 +365,7 @@ fn pack_bins_single(
     for node in nodes {
         if node.is_empty() {
             return Err(BinError::ItemTooSmall);
-        } else  if node.width_total() > bin_width || node.height_total() > bin_height {
+        } else if node.width_total() > bin_width || node.height_total() > bin_height {
             return Err(BinError::ItemTooBig);
         }
 

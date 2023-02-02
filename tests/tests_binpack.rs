@@ -1,4 +1,4 @@
-use binpack2d::{pack_bins, BinType, Dimension, BinError};
+use binpack2d::{pack_bins, BinError, BinType, Dimension};
 use rand::prelude::*;
 use std::time::Instant;
 

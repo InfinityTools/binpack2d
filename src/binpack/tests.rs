@@ -25,13 +25,23 @@ fn bin_insert(bin_type: BinType) {
     ];
 
     let mut bin = bin_new(bin_type, 16, 16);
-    println!("{:?}::Insert: Creating bin({}, {})", bin_type, bin.width(), bin.height());
+    println!(
+        "{:?}::Insert: Creating bin({}, {})",
+        bin_type,
+        bin.width(),
+        bin.height()
+    );
 
     for node in &nodes {
         bin.insert(node);
     }
-    println!("{} node(s) in bin, {} node(s) rejected, occupancy: {}:\n{}",
-             bin.len(), nodes.len() - bin.len(), bin.occupancy(), bin.visualize());
+    println!(
+        "{} node(s) in bin, {} node(s) rejected, occupancy: {}:\n{}",
+        bin.len(),
+        nodes.len() - bin.len(),
+        bin.occupancy(),
+        bin.visualize()
+    );
     println!("{bin}");
 }
 
@@ -47,14 +57,23 @@ fn bin_insert_list(bin_type: BinType) {
     ];
 
     let mut bin = bin_new(bin_type, 16, 16);
-    println!("{:?}::Insert_list: Creating bin({}, {})", bin_type, bin.width(), bin.height());
+    println!(
+        "{:?}::Insert_list: Creating bin({}, {})",
+        bin_type,
+        bin.width(),
+        bin.height()
+    );
 
     bin.insert_list(&nodes);
-    println!("{} node(s) in bin, {} node(s) rejected, occupancy: {}:\n{}",
-             bin.len(), nodes.len(), bin.occupancy(), bin.visualize());
+    println!(
+        "{} node(s) in bin, {} node(s) rejected, occupancy: {}:\n{}",
+        bin.len(),
+        nodes.len(),
+        bin.occupancy(),
+        bin.visualize()
+    );
     println!("{bin}");
 }
-
 
 #[test]
 fn bin_shrink_maxrects() {

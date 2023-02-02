@@ -57,9 +57,9 @@
 //! println!("Occupancy of the bin: {:.1} %", bin.occupancy() * 100.0);
 //! ```
 
+use crate::binpack::BinError;
 use std::fmt::{Display, Formatter};
 use std::slice::Iter;
-use crate::binpack::BinError;
 
 use super::{visualize_bin, BinPacker};
 use crate::dimension::Dimension;
@@ -281,9 +281,11 @@ impl MaxRectsBin {
             new_rects_free: Vec::new(),
             default_heuristic: Heuristic::BestShortSideFit,
         };
-        result
-            .rects_free
-            .push(Rectangle::new(0, 0, Dimension::with_id(0, result.bin_width, result.bin_height, 0)));
+        result.rects_free.push(Rectangle::new(
+            0,
+            0,
+            Dimension::with_id(0, result.bin_width, result.bin_height, 0),
+        ));
 
         result
     }
@@ -316,7 +318,10 @@ impl MaxRectsBin {
     /// or `None` otherwise.
     pub fn insert(&mut self, dim: &Dimension, rule: Heuristic) -> Option<Rectangle> {
         // Empty or too big dimension objects are always rejected
-        if dim.is_empty() || dim.width_total() > self.bin_width || dim.height_total() > self.bin_height {
+        if dim.is_empty()
+            || dim.width_total() > self.bin_width
+            || dim.height_total() > self.bin_height
+        {
             return None;
         }
 
@@ -350,7 +355,11 @@ impl MaxRectsBin {
     /// packed bins for greater numbers of dimension objects.
     ///
     /// [`insert`]: MaxRectsBin::insert
-    pub fn insert_list(&mut self, nodes: &[Dimension], rule: Heuristic) -> (Vec<Rectangle>, Vec<Dimension>) {
+    pub fn insert_list(
+        &mut self,
+        nodes: &[Dimension],
+        rule: Heuristic,
+    ) -> (Vec<Rectangle>, Vec<Dimension>) {
         let mut inserted = Vec::with_capacity(nodes.len());
         let mut rejected = nodes.to_vec();
 
@@ -431,7 +440,8 @@ impl MaxRectsBin {
         let mut best_x = i32::MAX;
         let mut best_y = i32::MAX;
         for rect in &self.rects_free {
-            if rect.width_total() >= dim.width_total() && rect.height_total() >= dim.height_total() {
+            if rect.width_total() >= dim.width_total() && rect.height_total() >= dim.height_total()
+            {
                 let top_y = rect.y_total() + dim.height_total();
 
                 if top_y < best_y || (top_y == best_y && rect.x_total() < best_x) {
@@ -454,7 +464,8 @@ impl MaxRectsBin {
         let mut best_short_side_fit = i32::MAX;
         let mut best_long_size_fit = i32::MAX;
         for rect in &self.rects_free {
-            if rect.width_total() >= dim.width_total() && rect.height_total() >= dim.height_total() {
+            if rect.width_total() >= dim.width_total() && rect.height_total() >= dim.height_total()
+            {
                 let leftover_h = rect.width_total().abs_diff(dim.width_total()) as i32;
                 let leftover_v = rect.height_total().abs_diff(dim.height_total()) as i32;
                 let short_side_fit = leftover_h.min(leftover_v);
@@ -482,7 +493,8 @@ impl MaxRectsBin {
         let mut best_short_side_fit = i32::MAX;
         let mut best_long_size_fit = i32::MAX;
         for rect in &self.rects_free {
-            if rect.width_total() >= dim.width_total() && rect.height_total() >= dim.height_total() {
+            if rect.width_total() >= dim.width_total() && rect.height_total() >= dim.height_total()
+            {
                 let leftover_h = rect.width_total().abs_diff(dim.width_total()) as i32;
                 let leftover_v = rect.height_total().abs_diff(dim.height_total()) as i32;
                 let short_side_fit = leftover_h.min(leftover_v);
@@ -511,7 +523,8 @@ impl MaxRectsBin {
         let mut best_short_side_fit = i64::MAX;
         // let mut best_fit = (u32::MAX, 0u32);
         for rect in &self.rects_free {
-            if rect.width_total() >= dim.width_total() && rect.height_total() >= dim.height_total() {
+            if rect.width_total() >= dim.width_total() && rect.height_total() >= dim.height_total()
+            {
                 let leftover_h = rect.width_total().abs_diff(dim.width_total());
                 let leftover_v = rect.height_total().abs_diff(dim.height_total());
                 let short_side_fit = leftover_h.min(leftover_v) as i64;
@@ -538,9 +551,14 @@ impl MaxRectsBin {
 
         let mut best_score = -1;
         for rect in &self.rects_free {
-            if rect.width_total() >= dim.width_total() && rect.height_total() >= dim.height_total() {
-                let score =
-                    self.contact_point_score_node(rect.x_total(), rect.y_total(), dim.width_total(), dim.height_total());
+            if rect.width_total() >= dim.width_total() && rect.height_total() >= dim.height_total()
+            {
+                let score = self.contact_point_score_node(
+                    rect.x_total(),
+                    rect.y_total(),
+                    dim.width_total(),
+                    dim.height_total(),
+                );
                 if score > best_score {
                     let best_node = result.get_or_insert_with(|| Rectangle::new(0, 0, *dim));
                     best_node.set_location_total(rect.x_total(), rect.y_total());
@@ -570,12 +588,20 @@ impl MaxRectsBin {
 
         for rect in &self.rects_used {
             if rect.x_total() == x + width || rect.x_total() + rect.width_total() == x {
-                score +=
-                    Self::common_interval_length(rect.y_total(), rect.y_total() + rect.height_total(), y, y + height);
+                score += Self::common_interval_length(
+                    rect.y_total(),
+                    rect.y_total() + rect.height_total(),
+                    y,
+                    y + height,
+                );
             }
             if rect.y_total() == y + height || rect.y_total() + rect.height_total() == y {
-                score +=
-                    Self::common_interval_length(rect.x_total(), rect.x_total() + rect.width_total(), x, x + width);
+                score += Self::common_interval_length(
+                    rect.x_total(),
+                    rect.x_total() + rect.width_total(),
+                    x,
+                    x + width,
+                );
             }
         }
 
@@ -598,9 +624,13 @@ impl MaxRectsBin {
         // to avoid testing them against each other.
         self.new_rects_free_size = self.new_rects_free.len();
 
-        if used.x_total() < free.x_total() + free.width_total() && used.x_total() + used.width_total() > free.x_total() {
+        if used.x_total() < free.x_total() + free.width_total()
+            && used.x_total() + used.width_total() > free.x_total()
+        {
             // New node at the top side of the used node
-            if used.y_total() > free.y_total() && used.y_total() < free.y_total() + free.height_total() {
+            if used.y_total() > free.y_total()
+                && used.y_total() < free.y_total() + free.height_total()
+            {
                 let mut new_node = free.to_owned();
                 let new_y = new_node.y_total();
                 new_node.dim_mut().set_height(used.y_total() - new_y);
@@ -611,16 +641,20 @@ impl MaxRectsBin {
             if used.y_total() + used.height_total() < free.y_total() + free.height_total() {
                 let mut new_node = free.to_owned();
                 new_node.set_y_total(used.y_total() + used.height_total());
-                new_node
-                    .dim_mut()
-                    .set_height(free.y_total() + free.height_total() - (used.y_total() + used.height_total()));
+                new_node.dim_mut().set_height(
+                    free.y_total() + free.height_total() - (used.y_total() + used.height_total()),
+                );
                 self.insert_new_free_rect(&new_node);
             }
         }
 
-        if used.y_total() < free.y_total() + free.height_total() && used.y_total() + used.height_total() > free.y_total() {
+        if used.y_total() < free.y_total() + free.height_total()
+            && used.y_total() + used.height_total() > free.y_total()
+        {
             // New node at the left side of the used node.
-            if used.x_total() > free.x_total() && used.x_total() < free.x_total() + free.width_total() {
+            if used.x_total() > free.x_total()
+                && used.x_total() < free.x_total() + free.width_total()
+            {
                 let mut new_node = free.to_owned();
                 let new_x = new_node.x_total();
                 new_node.dim_mut().set_width(used.x_total() - new_x);
@@ -631,9 +665,9 @@ impl MaxRectsBin {
             if used.x_total() + used.width_total() < free.x_total() + free.width_total() {
                 let mut new_node = free.to_owned();
                 new_node.set_x_total(used.x_total() + used.width_total());
-                new_node
-                    .dim_mut()
-                    .set_width(free.x_total() + free.width_total() - (used.x_total() + used.width_total()));
+                new_node.dim_mut().set_width(
+                    free.x_total() + free.width_total() - (used.x_total() + used.width_total()),
+                );
                 self.insert_new_free_rect(&new_node);
             }
         }
@@ -817,15 +851,18 @@ fn pack_bins_list(
 
         if inserted.is_empty() && !rejected.is_empty() {
             // remaining nodes are too big or too small
-            let result = rejected.iter().map(|r| {
-                if r.width_total() == 0 || r.height_total() == 0 {
-                    BinError::ItemTooSmall
-                } else if r.width_total() > bin_width || r.height_total() > bin_height {
-                    BinError::ItemTooBig
-                } else {
-                    BinError::Unspecified
-                }
-            }).next();
+            let result = rejected
+                .iter()
+                .map(|r| {
+                    if r.width_total() == 0 || r.height_total() == 0 {
+                        BinError::ItemTooSmall
+                    } else if r.width_total() > bin_width || r.height_total() > bin_height {
+                        BinError::ItemTooBig
+                    } else {
+                        BinError::Unspecified
+                    }
+                })
+                .next();
             if let Some(result) = result {
                 return Err(result);
             } else {
@@ -879,14 +916,14 @@ fn pack_bins_single(
         if !inserted {
             bins.push(MaxRectsBin::new(bin_width, bin_height));
             if let Some(bin) = bins.last_mut() {
-                bin.insert(node, rule).expect("Object should fit into the bin");
+                bin.insert(node, rule)
+                    .expect("Object should fit into the bin");
             }
         }
     }
 
     Ok(bins)
 }
-
 
 #[cfg(test)]
 mod tests;
