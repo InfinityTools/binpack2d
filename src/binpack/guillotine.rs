@@ -769,7 +769,7 @@ impl GuillotineBin {
         );
 
         if split_horizontal {
-            // split horizontall
+            // split horizontally
             bottom.dim_mut().set_width(free_rect.width());
             right.dim_mut().set_height(placed_rect.height());
         } else {
@@ -808,13 +808,13 @@ impl GuillotineBin {
                         rect1.set_y_total(rect1.y_total() - rect2.height_total());
                         let rect1_height = rect1.height();
                         rect1.dim_mut().set_height(rect1_height + rect2.height());
-                        let _ = mem::replace(&mut self.rects_free[i], rect1.to_owned());
+                        let _ = mem::replace(&mut self.rects_free[i], rect1);
                         self.rects_free.swap_remove(j);
                         free_size -= 1;
                     } else if rect1.y_total() + rect1.height_total() == rect2.y_total() {
                         let rect1_height = rect1.height();
                         rect1.dim_mut().set_height(rect1_height + rect2.height());
-                        let _ = mem::replace(&mut self.rects_free[i], rect1.to_owned());
+                        let _ = mem::replace(&mut self.rects_free[i], rect1);
                         self.rects_free.swap_remove(j);
                         free_size -= 1;
                     } else {
@@ -825,13 +825,13 @@ impl GuillotineBin {
                         rect1.set_x_total(rect1.x_total() - rect2.width_total());
                         let rect1_width = rect1.width();
                         rect1.dim_mut().set_width(rect1_width + rect2.width());
-                        let _ = mem::replace(&mut self.rects_free[i], rect1.to_owned());
+                        let _ = mem::replace(&mut self.rects_free[i], rect1);
                         self.rects_free.swap_remove(j);
                         free_size -= 1;
                     } else if rect1.x_total() + rect1.width_total() == rect2.x_total() {
                         let rect1_width = rect1.width();
                         rect1.dim_mut().set_width(rect1_width + rect2.width());
-                        let _ = mem::replace(&mut self.rects_free[i], rect1.to_owned());
+                        let _ = mem::replace(&mut self.rects_free[i], rect1);
                         self.rects_free.swap_remove(j);
                         free_size -= 1;
                     } else {

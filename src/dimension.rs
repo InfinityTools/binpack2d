@@ -24,9 +24,9 @@ pub(crate) fn get_unique_id() -> isize {
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Dimension {
     id: isize,
-    width: i32,
-    height: i32,
-    padding: i32,
+    pub(crate) width: i32,
+    pub(crate) height: i32,
+    pub(crate) padding: i32,
 }
 
 impl Dimension {
@@ -83,7 +83,7 @@ impl Dimension {
 
     /// Returns width of the `Dimension` with padding.
     pub(crate) fn width_total(&self) -> i32 {
-        self.padding + self.width + self.padding
+        self.width + (self.padding << 1)
     }
 
     /// Returns height of the `Dimension`.
@@ -93,7 +93,7 @@ impl Dimension {
 
     /// Returns height of the `Dimension` with padding.
     pub(crate) fn height_total(&self) -> i32 {
-        self.padding + self.height + self.padding
+        self.height + (self.padding << 1)
     }
 
     /// Returns the padding of the `Dimension`.

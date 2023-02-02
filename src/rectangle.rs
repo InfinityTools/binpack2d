@@ -26,7 +26,7 @@ impl Rectangle {
 
     /// Returns the x coordinate of the bounding `Rectangle`, including padding.
     pub(crate) fn x_total(&self) -> i32 {
-        self.x - self.dim.padding()
+        self.x - self.dim.padding
     }
 
     /// Returns the y coordinate of the bounding `Rectangle`.
@@ -36,7 +36,7 @@ impl Rectangle {
 
     /// Returns the y coordinate of the bounding `Rectangle`, including padding.
     pub(crate) fn y_total(&self) -> i32 {
-        self.y - self.dim.padding()
+        self.y - self.dim.padding
     }
 
     /// Moves this `Rectangle` horizontally to the location specified by x.
@@ -48,7 +48,7 @@ impl Rectangle {
     ///
     /// Includes padding in the calculation.
     pub(crate) fn set_x_total(&mut self, x: i32) {
-        self.x = x + self.dim.padding();
+        self.x = x + self.dim.padding;
     }
 
     /// Moves this `Rectangle` vertically to the location specified by y.
@@ -60,7 +60,7 @@ impl Rectangle {
     ///
     /// Includes padding in the calculation.
     pub(crate) fn set_y_total(&mut self, y: i32) {
-        self.y = y + self.dim.padding();
+        self.y = y + self.dim.padding;
     }
 
     /// Moves this `Rectangle` to the location specified by x and y.
@@ -73,8 +73,8 @@ impl Rectangle {
     ///
     /// Includes padding in the calculation.
     pub(crate) fn set_location_total(&mut self, x: i32, y: i32) {
-        self.x = x + self.dim.padding();
-        self.y = y + self.dim.padding();
+        self.x = x + self.dim.padding;
+        self.y = y + self.dim.padding;
     }
 
     /// Translates this `Rectangle` the indicated distance, to the right along the X axis,
