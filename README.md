@@ -7,6 +7,9 @@ The algorithms are all approximations and use various heuristics, since the prob
 
 The implementation is based on Jukka Jylänki's original C++ implementation of the RectangleBinPack.
 
+A comparison of all supported bin packing algorithms and their respective subvariants can be found
+<a href="https://github.com/InfinityTools/binpack2d/blob/comparison/comparison.md">here</a>.
+
 # Quick Start
 
 ```
