@@ -1,6 +1,6 @@
 [package]
 name = "binpack2d"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Argent77"]
 edition = "2021"
 description = "A two-dimensional rectangle bin-packing algorithm."

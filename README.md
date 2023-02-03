@@ -15,7 +15,7 @@ A comparison of all supported bin packing algorithms and their respective subvar
 ```
 # In your Cargo.toml
 [dependencies]
-binpack2d = "0.1"
+binpack2d = "1.0"
 ```
 
 This is a basic example that packs a number of rectangles into a bin and performs some queries afterwards.
