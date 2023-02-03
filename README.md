@@ -70,4 +70,5 @@ fn main() {
 }
 ```
 
-<!-- The full API Documentation can be found here: https://docs.rs/binpack2d -->
+The full API Documentation can be found here: https://docs.rs/binpack2d
+
