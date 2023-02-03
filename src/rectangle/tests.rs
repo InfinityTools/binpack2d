@@ -4,9 +4,10 @@ use crate::dimension::Dimension;
 #[test]
 fn rectangle_get() {
     let rect = Rectangle::new(5, 8, Dimension::with_id(1, 6, 7, 2));
+    assert_eq!(1, rect.id());
     assert_eq!(5, rect.x());
-    assert_eq!(8, rect.y());
     assert_eq!(3, rect.x_total());
+    assert_eq!(8, rect.y());
     assert_eq!(6, rect.y_total());
     assert_eq!(6, rect.width());
     assert_eq!(7, rect.height());

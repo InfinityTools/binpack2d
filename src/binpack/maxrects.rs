@@ -132,15 +132,15 @@ impl BinPacker for MaxRectsBin {
     fn grow(&mut self, dw: u32, dh: u32) {
         if dw > 0 || dh > 0 {
             // Both free rectangles lists must cover the new space
-            let lists = vec![&mut self.rects_free, &mut self.new_rects_free];
+            let lists = [&mut self.rects_free, &mut self.new_rects_free];
             for list in lists {
                 for r in list {
                     if dw > 0 && r.x_total() + r.width_total() == self.bin_width {
-                        let w = r.width_total();
+                        let w = r.width();
                         r.dim_mut().set_width(w + dw as i32);
                     }
                     if dh > 0 && r.y_total() + r.height_total() == self.bin_height {
-                        let h = r.height_total();
+                        let h = r.height();
                         r.dim_mut().set_height(h + dh as i32);
                     }
                 }

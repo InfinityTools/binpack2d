@@ -165,11 +165,11 @@ impl BinPacker for GuillotineBin {
             // Free rectangles list must cover the new space
             for r in &mut self.rects_free {
                 if dw > 0 && r.x_total() + r.width_total() == self.bin_width {
-                    let w = r.width_total();
+                    let w = r.width();
                     r.dim_mut().set_width(w + dw as i32);
                 }
                 if dh > 0 && r.y_total() + r.height_total() == self.bin_height {
-                    let h = r.height_total();
+                    let h = r.height();
                     r.dim_mut().set_height(h + dh as i32);
                 }
             }

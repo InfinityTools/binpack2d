@@ -13,6 +13,22 @@ fn bin_shrink(bin_type: BinType) {
     assert_eq!(7, bin.height());
 }
 
+fn bin_grow(bin_type: BinType) {
+    let mut bin = bin_new(bin_type, 8, 8);
+    assert_eq!(8, bin.width());
+    assert_eq!(8, bin.height());
+
+    let result = bin.insert(&Dimension::with_padding(5, 5, 1));
+    assert!(result.is_some());
+
+    let result1 = bin.insert(&Dimension::new(8, 8));
+    assert!(result1.is_none());
+
+    bin.grow(8, 8);
+    let result2 = bin.insert(&Dimension::new(8, 8));
+    assert!(result2.is_some());
+}
+
 fn bin_insert(bin_type: BinType) {
     let nodes = vec![
         Dimension::with_padding(2, 4, 0),
@@ -25,24 +41,20 @@ fn bin_insert(bin_type: BinType) {
     ];
 
     let mut bin = bin_new(bin_type, 16, 16);
-    println!(
-        "{:?}::Insert: Creating bin({}, {})",
-        bin_type,
-        bin.width(),
-        bin.height()
-    );
+    assert_eq!(16, bin.width());
+    assert_eq!(16, bin.height());
 
     for node in &nodes {
         bin.insert(node);
     }
-    println!(
-        "{} node(s) in bin, {} node(s) rejected, occupancy: {}:\n{}",
-        bin.len(),
-        nodes.len() - bin.len(),
-        bin.occupancy(),
-        bin.visualize()
-    );
-    println!("{bin}");
+
+    for rect1 in bin.iter() {
+        for rect2 in bin.iter() {
+            if rect1 != rect2 {
+                assert!(!rect1.intersects(rect2));
+            }
+        }
+    }
 }
 
 fn bin_insert_list(bin_type: BinType) {
@@ -57,22 +69,46 @@ fn bin_insert_list(bin_type: BinType) {
     ];
 
     let mut bin = bin_new(bin_type, 16, 16);
-    println!(
-        "{:?}::Insert_list: Creating bin({}, {})",
-        bin_type,
-        bin.width(),
-        bin.height()
-    );
+    assert_eq!(16, bin.width());
+    assert_eq!(16, bin.height());
 
-    bin.insert_list(&nodes);
-    println!(
-        "{} node(s) in bin, {} node(s) rejected, occupancy: {}:\n{}",
-        bin.len(),
-        nodes.len(),
-        bin.occupancy(),
-        bin.visualize()
-    );
-    println!("{bin}");
+    let (inserted, rejected) = bin.insert_list(&nodes);
+    assert_eq!(nodes.len(), inserted.len() + rejected.len());
+
+    for rect1 in bin.iter() {
+        for rect2 in bin.iter() {
+            if rect1 != rect2 {
+                assert!(!rect1.intersects(rect2));
+            }
+        }
+    }
+}
+
+fn bin_find_by_id(bin_type: BinType) {
+    let mut bin = bin_new(bin_type, 16, 16);
+    bin.insert(&Dimension::with_id(1, 4, 4, 0));
+    bin.insert(&Dimension::with_id(2, 1, 1, 1));
+
+    let result = bin.find_by_id(2);
+    assert!(result.is_some());
+    assert_eq!(1, result.unwrap().dim().padding());
+}
+
+fn bin_iter_slice(bin_type: BinType) {
+    let mut bin = bin_new(bin_type, 64, 64);
+    for i in 1..5 {
+        let result = bin.insert(&Dimension::with_id(i, i as i32, i as i32 * 2, i as i32 / 2));
+        assert!(result.is_some());
+    }
+
+    assert_eq!(4, bin.len());
+
+    for rect in bin.iter() {
+        assert!(rect.id() > 0);
+    }
+
+    let rects = &bin.as_slice()[1..3];
+    assert_eq!(2, rects.len());
 }
 
 #[test]
@@ -83,6 +119,16 @@ fn bin_shrink_maxrects() {
 #[test]
 fn bin_shrink_guillotine() {
     bin_shrink(BinType::Guillotine);
+}
+
+#[test]
+fn bin_grow_maxrects() {
+    bin_grow(BinType::MaxRects);
+}
+
+#[test]
+fn bin_grow_guillotine() {
+    bin_grow(BinType::Guillotine);
 }
 
 #[test]
@@ -103,4 +149,24 @@ fn bin_insert_list_maxrects() {
 #[test]
 fn bin_insert_list_guillotine() {
     bin_insert_list(BinType::Guillotine);
+}
+
+#[test]
+fn bin_find_by_id_maxrects() {
+    bin_find_by_id(BinType::MaxRects);
+}
+
+#[test]
+fn bin_find_by_id_guillotine() {
+    bin_find_by_id(BinType::Guillotine);
+}
+
+#[test]
+fn bin_iter_slice_maxrects() {
+    bin_iter_slice(BinType::MaxRects);
+}
+
+#[test]
+fn bin_iter_slice_guillotine() {
+    bin_iter_slice(BinType::Guillotine);
 }

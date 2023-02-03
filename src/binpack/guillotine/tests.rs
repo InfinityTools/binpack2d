@@ -34,25 +34,20 @@ fn bin_insert() {
     let method = SplitHeuristic::MinimizeArea;
 
     let mut bin = GuillotineBin::new(16, 16);
-    println!(
-        "GuillotineBin::Insert: Creating bin({}, {}) using choice {:?} and method {:?}",
-        bin.width(),
-        bin.height(),
-        choice,
-        method
-    );
+    assert_eq!(16, bin.width());
+    assert_eq!(16, bin.height());
 
     for node in &nodes {
         bin.insert(node, false, choice, method);
     }
-    println!(
-        "{} node(s) in bin, {} node(s) rejected, occupancy: {}:\n{}",
-        bin.len(),
-        nodes.len() - bin.len(),
-        bin.occupancy(),
-        bin.visualize()
-    );
-    println!("{bin}");
+
+    for rect1 in bin.iter() {
+        for rect2 in bin.iter() {
+            if rect1 != rect2 {
+                assert!(!rect1.intersects(rect2));
+            }
+        }
+    }
 }
 
 #[test]
@@ -71,21 +66,17 @@ fn bin_insert_list() {
     let method = SplitHeuristic::MinimizeArea;
 
     let mut bin = GuillotineBin::new(16, 16);
-    println!(
-        "GuillotineBin::Insert_list: Creating bin({}, {}) using choice {:?} and method {:?}",
-        bin.width(),
-        bin.height(),
-        choice,
-        method
-    );
+    assert_eq!(16, bin.width());
+    assert_eq!(16, bin.height());
 
-    bin.insert_list(&nodes, true, choice, method);
-    println!(
-        "{} node(s) in bin, {} node(s) rejected, occupancy: {}:\n{}",
-        bin.len(),
-        nodes.len(),
-        bin.occupancy(),
-        bin.visualize()
-    );
-    println!("{bin}");
+    let (inserted, rejected) = bin.insert_list(&nodes, true, choice, method);
+    assert_eq!(nodes.len(), inserted.len() + rejected.len());
+
+    for rect1 in bin.iter() {
+        for rect2 in bin.iter() {
+            if rect1 != rect2 {
+                assert!(!rect1.intersects(rect2));
+            }
+        }
+    }
 }

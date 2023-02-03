@@ -28,24 +28,20 @@ fn bin_insert() {
     let rule = Heuristic::ContactPointRule;
 
     let mut bin = MaxRectsBin::new(16, 16);
-    println!(
-        "MaxRectsBin::Insert: Creating bin({}, {}) using rule {:?}",
-        bin.width(),
-        bin.height(),
-        rule
-    );
+    assert_eq!(16, bin.width());
+    assert_eq!(16, bin.height());
 
     for node in nodes.iter() {
         bin.insert(node, rule);
     }
-    println!(
-        "{} node(s) in bin, {} node(s) rejected, occupancy: {}:\n{}",
-        bin.len(),
-        nodes.len() - bin.len(),
-        bin.occupancy(),
-        bin.visualize()
-    );
-    println!("{bin}");
+
+    for rect1 in bin.iter() {
+        for rect2 in bin.iter() {
+            if rect1 != rect2 {
+                assert!(!rect1.intersects(rect2));
+            }
+        }
+    }
 }
 
 #[test]
@@ -63,20 +59,17 @@ fn bin_insert_list() {
     let rule = Heuristic::ContactPointRule;
 
     let mut bin = MaxRectsBin::new(16, 16);
-    println!(
-        "MaxRectsBin::Insert_list: Creating bin({}, {}) using rule {:?}",
-        bin.width(),
-        bin.height(),
-        rule
-    );
+    assert_eq!(16, bin.width());
+    assert_eq!(16, bin.height());
 
-    bin.insert_list(&nodes, rule);
-    println!(
-        "{} node(s) in bin, {} node(s) rejected, occupancy: {}:\n{}",
-        bin.len(),
-        nodes.len(),
-        bin.occupancy(),
-        bin.visualize()
-    );
-    println!("{bin}");
+    let (inserted, rejected) = bin.insert_list(&nodes, rule);
+    assert_eq!(nodes.len(), inserted.len() + rejected.len());
+
+    for rect1 in bin.iter() {
+        for rect2 in bin.iter() {
+            if rect1 != rect2 {
+                assert!(!rect1.intersects(rect2));
+            }
+        }
+    }
 }
