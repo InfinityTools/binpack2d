@@ -161,24 +161,21 @@ impl BinPacker for GuillotineBin {
     }
 
     fn grow(&mut self, dw: u32, dh: u32) {
-        if dw > 0 || dh > 0 {
-            if dw > 0 {
-                self.rects_free.push(Rectangle::new(
-                    self.bin_width,
-                    0,
-                    Dimension::with_id(0, dw as i32, self.bin_height, 0)
-                ));
-            }
-
-            if dh > 0 {
-                self.rects_free.push(Rectangle::new(
-                    0,
-                    self.bin_height,
-                    Dimension::with_id(0, self.bin_width, dh as i32, 0)
-                ));
-            }
-
+        if dw > 0 {
+            self.rects_free.push(Rectangle::new(
+                self.bin_width,
+                0,
+                Dimension::with_id(0, dw as i32, self.bin_height, 0)
+            ));
             self.bin_width += dw as i32;
+        }
+
+        if dh > 0 {
+            self.rects_free.push(Rectangle::new(
+                0,
+                self.bin_height,
+                Dimension::with_id(0, self.bin_width, dh as i32, 0)
+            ));
             self.bin_height += dh as i32;
         }
     }
