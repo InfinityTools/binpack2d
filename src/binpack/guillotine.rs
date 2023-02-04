@@ -162,16 +162,20 @@ impl BinPacker for GuillotineBin {
 
     fn grow(&mut self, dw: u32, dh: u32) {
         if dw > 0 || dh > 0 {
-            // Free rectangles list must cover the new space
-            for r in &mut self.rects_free {
-                if dw > 0 && r.x_total() + r.width_total() == self.bin_width {
-                    let w = r.width();
-                    r.dim_mut().set_width(w + dw as i32);
-                }
-                if dh > 0 && r.y_total() + r.height_total() == self.bin_height {
-                    let h = r.height();
-                    r.dim_mut().set_height(h + dh as i32);
-                }
+            if dw > 0 {
+                self.rects_free.push(Rectangle::new(
+                    self.bin_width,
+                    0,
+                    Dimension::with_id(0, dw as i32, self.bin_height, 0)
+                ));
+            }
+
+            if dh > 0 {
+                self.rects_free.push(Rectangle::new(
+                    0,
+                    self.bin_height,
+                    Dimension::with_id(0, self.bin_width, dh as i32, 0)
+                ));
             }
 
             self.bin_width += dw as i32;
