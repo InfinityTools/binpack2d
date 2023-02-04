@@ -1,6 +1,9 @@
 # binpack2d
 
-[![Actions Status](https://github.com/InfinityTools/binpack2d/workflows/Cargo%20Build%20%26%20Test/badge.svg)](https://github.com/InfinityTools/binpack2d/actions)
+[![crates.io][crates-badge]][crates-url]
+[![lines of code][loc-badge]][loc-url]
+[![actions status][ci-badge]][ci-url]
+[![license][license-badge]][license-url]
 
 `binpack2d` is a Rust library for packing sets of arbitrary 2d rectangles into a larger bin.
 The algorithms are all approximations and use various heuristics, since the problem itself is intractable.
@@ -8,11 +11,11 @@ The algorithms are all approximations and use various heuristics, since the prob
 The implementation is based on Jukka Jylänki's original C++ implementation of the RectangleBinPack.
 
 A comparison of all supported bin packing algorithms and their respective subvariants can be found
-<a href="https://github.com/InfinityTools/binpack2d/blob/comparison/comparison.md">here</a>.
+[here][comparison-url].
 
 # Quick Start
 
-```
+```toml
 # In your Cargo.toml
 [dependencies]
 binpack2d = "1.0"
@@ -72,3 +75,20 @@ fn main() {
 
 The full API Documentation can be found here: https://docs.rs/binpack2d
 
+[crates-badge]: https://img.shields.io/crates/v/binpack2d.svg
+[crates-url]: https://crates.io/crates/binpack2d
+
+<!--
+Replace with this url if/when the server is online again:
+https://tokei.rs/b1/github/InfinityTools/binpack2d?category=code
+-->
+[loc-badge]: https://tokei.ekzhang.com/b1/github/InfinityTools/binpack2d?category=code
+[loc-url]: https://github.com/InfinityTools/binpack2d
+
+[ci-badge]: https://github.com/InfinityTools/binpack2d/actions/workflows/ci.yml/badge.svg
+[ci-url]: https://github.com/InfinityTools/binpack2d/actions
+
+[license-badge]: https://img.shields.io/github/license/InfinityTools/binpack2d.svg
+[license-url]: https://github.com/InfinityTools/binpack2d/blob/master/LICENSE
+
+[comparison-url]: https://github.com/InfinityTools/binpack2d/blob/comparison/comparison.md
